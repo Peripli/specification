@@ -1,0 +1,10 @@
+# Automated static checks
+
+language: bash
+
+services:
+
+before_install:
+  
+script:
+  scripts/check.sh
