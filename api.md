@@ -14,7 +14,6 @@
     - [Retrieving a Service Broker](#retrieving-a-service-broker)
     - [Deleting a Service Broker](#deleting-a-service-broker)
     - [Updating a Service Broker](#updating-a-service-broker)
-    - [Retrieving Platform-Specific Service Brokers](#retrieving-platform-specific-service-brokers)
   - [Aggregated Catalog](#aggregated-catalog)
   - [Service Management](#service-management)
   - [Credentials Object](#credentials-object)
@@ -595,46 +594,6 @@ The response body MUST be a valid JSON Object (`{}`).
 | created_at     | string | the time of creation in ISO-8601 format |
 | updated_at     | string | the time of the last update in ISO-8601 format |
 | metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
-
-\* Fields with an asterisk are REQUIRED.
-
-## Retrieving Platform-Specific Service Brokers
-
-Each platform must know which service brokers need to be registered in it. It is the job of the service broker proxy to request the service brokers that need to be registered in its platform.
-
-**Note:** This is experimental API and should not be used in productive environment.
-
-### Request
-
-#### Route
-
-`GET /v1/internal/service_brokers`
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| --- | --- | --- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful processing of the request. The expected response is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-| Response Field | Type | Description |
-| -------------- | ---- | ----------- |
-| brokers*       | array of [service broker](#service-broker-object) objects | Schema of service broker objects. MAY be empty. |
 
 \* Fields with an asterisk are REQUIRED.
 

@@ -73,7 +73,7 @@ It is the substitute for all brokers registered at the Service Manager
 in order to replicate broker registration and access visibility changes in the corresponding Platform Instance.
 
 When a broker is registered or deregistered at the Service Manager,
-the Service Broker Proxy registers respectively deregisters itself in the name of this service broker.
+the Service Broker Proxy registers or deregisters itself in the name of this service broker.
 From a Platform Instance point of view, the broker proxy is indistinguishable from the real broker because both implement the OSB API.
 
 When the Platform Instance makes a call to the service broker, for example to provision a service instance,
