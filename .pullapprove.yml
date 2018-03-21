@@ -1,0 +1,28 @@
+version: 2
+
+# Group settings to apply to all groups by default, optionally being overridden later
+group_defaults:
+  approve_by_comment:
+    enabled: true
+    approve_regex: '^(Approved|:\+1:)'
+    reject_regex: '^(Rejected|:-1:)'
+  reset_on_push:
+    enabled: true
+  reset_on_reopened:
+    enabled: true
+
+# Groups of reviewers and their respective settings
+groups:
+  core-team:
+    required: 4
+
+    users:
+      - dpanayotov
+      - KirilKabakchiev
+      - dzahariev
+      - NickyMateev
+      - dotchev
+      - georgifarashev
+      - pankrator
+
+    reject_value: -1
