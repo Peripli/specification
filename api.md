@@ -334,7 +334,7 @@ The following HTTP Headers are defined for this operation:
 | name* | string | A CLI-friendly name of the service broker. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all service brokers registered with the Service Manager. MUST be a non-empty string. |
 | description | string | A description of the service broker. |
 | broker_url* | string | MUST be a valid base URL for an application that implements the OSB API |
-| credentials | [credentials](#credentials-object) | If provided, MUST be a valid credentials object which will be used to authenticate against the service broker. |
+| credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
 | metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
 
 \* Fields with an asterisk are REQUIRED.

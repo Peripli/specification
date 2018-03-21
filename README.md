@@ -58,14 +58,14 @@ With Cloud Landscapes becoming bigger and more diverse, managing services is get
  For example, a database created in Kubernetes should be accessible in Cloud Foundry. 
  
 A standardized way is needed for managing broker registrations and propagating them
-to the underlying Platform Instances when necessary. Also there should be a mechanism for tracking service instances creation
+to the registered Platform Instances when necessary. Also there should be a mechanism for tracking service instances creation
 that allows sharing of service instances across Platform Instances.
 
 ## How it works
 
 The Service Manager consists of multiple parts.
 The main part is the core component.
-It is the central service broker registry that tracks all service instances and allows service broker and platform registration.
+It is the central registry for service broker and platform registrarion, as well as for tracking all service instances.
 This core component communicates with the registered brokers and acts as a platform per OSB for them.
 
 In each Platform Instance resides a component called the Service Broker Proxy.
