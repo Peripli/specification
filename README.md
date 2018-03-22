@@ -65,12 +65,12 @@ that allows sharing of service instances across Platform Instances.
 
 The Service Manager consists of multiple parts.
 The main part is the core component.
-It is the central registry for service broker and platform registrarion, as well as for tracking all service instances.
-This core component communicates with the registered brokers and acts as a platform per OSB for them.
+It is the central registry for service broker and platform registration, as well as for tracking of all service instances.
+This core component communicates with the registered brokers and acts as a platform per Open Service Broker specification for them.
 
 In each Platform Instance resides a component called the Service Broker Proxy.
 It is the substitute for all brokers registered at the Service Manager
-in order to replicate broker registration and access visibility changes in the corresponding Platform Instance.
+in order to replicate broker registration and access visibility changes in the corresponding Platform Instance. It also  delegates lifecycle operations to create/delete/bind/unbind service instances from the corresponding Platform Instance to the Service Manager and the services registered there.
 
 When a broker is registered or deregistered at the Service Manager,
 the Service Broker Proxy registers or deregisters itself in the name of this service broker.
