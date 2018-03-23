@@ -532,7 +532,7 @@ The following HTTP Headers are defined for this operation:
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful retrieval of the service broker. The expected response body is below. |
+| 200 OK      | MUST be returned upon successful retrieval of the service brokers. The expected response body is below. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
 
