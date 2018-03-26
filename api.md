@@ -320,7 +320,7 @@ The following HTTP Headers are defined for this operation:
 | name* | string | A CLI-friendly name of the service broker. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all service brokers registered with the Service Manager. MUST be a non-empty string. |
 | description | string | A description of the service broker. |
 | broker_url* | string | MUST be a valid base URL for an application that implements the OSB API |
-| credentials | [credentials](#credentials-object) | If provided, MUST be a valid credentials object which will be used to authenticate against the service broker. |
+| credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
 | metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
 
 \* Fields with an asterisk are REQUIRED.
@@ -344,12 +344,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "name": "service-broker-name",
     "description": "Service broker providing some valuable services",
-    "credentials": {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    },
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "broker_url": "https://service-broker-url",
@@ -365,7 +359,6 @@ The response body MUST be a valid JSON Object (`{}`).
 | id*            | string | ID of the service broker. MUST be unique across all service brokers registered with the Service Manager. If the same service broker is registered multiple times, each registration will get a different ID. |
 | name*          | string | Name of the service broker. |
 | description    | string | Description of the service broker. |
-| credentials   | [credentials](#credentials-object) | If not provided in the request, new credentials MUST be generated and returned in the response. These credentials which will be used to authenticate against the service broker. |
 | broker_url*    | string | URL of the service broker. |
 | created_at     | string | the time of creation in ISO-8601 format |
 | updated_at     | string | the time of the last update in ISO-8601 format |
