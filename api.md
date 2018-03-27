@@ -7,11 +7,13 @@
   - [Platform Management](#platform-management)
     - [Registering a Platform](#registering-a-platform)
     - [Retrieving a Platform](#retrieving-a-platform)
+    - [Retrieving All Platforms](#retrieving-all-platforms)
     - [Deleting a Platform](#deleting-a-platform)
     - [Updating a Platform](#updating-a-platform)
   - [Service Broker Management](#service-broker-management)
     - [Registering a Service Broker](#registering-a-service-broker)
     - [Retrieving a Service Broker](#retrieving-a-service-broker)
+    - [Retrieving All Service Brokers](#retrieving-all-service-brokers)
     - [Deleting a Service Broker](#deleting-a-service-broker)
     - [Updating a Service Broker](#updating-a-service-broker)
   - [Aggregated Catalog](#aggregated-catalog)
@@ -30,7 +32,7 @@ A CLI-friendly string is all lowercase, with no spaces. Keep it short -- imagine
 
 ## Registering a Platform
 
-In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform means that a new service broker proxy for this particular platform has been registered within the Service Manager.
+In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform means that a new service broker proxy for this particular platform has been registered with the Service Manager.
 
 ### Request
 
@@ -144,6 +146,8 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 The response body MUST be a valid JSON Object (`{}`).
 
+##### Platform Object
+
 ```json
 {
     "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
@@ -163,6 +167,65 @@ The response body MUST be a valid JSON Object (`{}`).
 | description | string | Platform description. |
 | created_at | string | The time of the creation in ISO-8601 format |
 | updated_at | string | The time of the last update in ISO-8601 format |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Retrieving All Platforms
+
+### Request
+
+#### Route
+
+`GET /v1/platforms`
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| --- | --- |
+| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+```json
+{
+  "platforms": [
+    {
+      "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+      "name": "cf-eu-10",
+      "type": "cloudfoundry",
+      "description": "Cloud Foundry on AWS in Frankfurt",
+      "created_at": "2016-06-08T16:41:22Z",
+      "updated_at": "2016-06-08T16:41:26Z"
+    },
+    {
+      "id": "e031d646-62a5-4a50-9d8e-23165172e9e1",
+      "name": "k8s-us-05",
+      "type": "kubernetes",
+      "description": "Kubernetes on GCP in us-west1",
+      "created_at": "2016-06-08T17:41:22Z",
+      "updated_at": "2016-06-08T17:41:26Z"
+    }
+  ]
+}
+```
+
+| Response field | Type | Description |
+| --- | --- | --- |
+| platforms* | array of [platforms](#platform-object) | List of registered platforms. |
 
 \* Fields with an asterisk are REQUIRED.
 
@@ -370,7 +433,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "metadata": {
 
     }
-  }
 }
 ```
 
@@ -433,7 +495,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "metadata": {
 
     }
-  }
 }
 ```
 
@@ -449,6 +510,67 @@ The response body MUST be a valid JSON Object (`{}`).
 
 \* Fields with an asterisk are REQUIRED.
 
+## Retrieving All Service Brokers
+
+### Request
+
+#### Route
+
+`GET /v1/service_brokers`
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK      | MUST be returned upon successful retrieval of the service brokers. The expected response body is below. |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+```json
+{
+  "brokers": [
+    {
+      "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
+      "name": "service-broker-name",
+      "description": "Service broker providing some valuable services",
+      "created_at": "2016-06-08T16:41:26Z",
+      "updated_at": "2016-06-08T16:41:26Z",
+      "broker_url": "https://service-broker-url",
+      "metadata": {
+
+      }
+    },
+    {
+      "id": "a62b83e8-1604-427d-b079-200ae9247b60",
+      "name": "another-broker",
+      "description": "More services",
+      "created_at": "2016-06-08T17:41:26Z",
+      "updated_at": "2016-06-08T17:41:26Z",
+      "broker_url": "https://another-broker-url"
+    }
+  ]
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| brokers* | array of [service brokers](#service-broker-object) | List of registered service brokers. |
+
+\* Fields with an asterisk are REQUIRED.
 
 ## Deleting a Service Broker
 
@@ -581,7 +703,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "metadata": {
 
     }
-  }
 }
 ```
 
