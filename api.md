@@ -287,13 +287,7 @@ The following HTTP Headers are defined for this operation:
 {
     "name": "cf-eu-10",
     "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
-    "credentials" : {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    }
+    "description": "Cloud Foundry on AWS in Frankfurt"
 }
 ```
 
@@ -302,7 +296,6 @@ The following HTTP Headers are defined for this operation:
 | name | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
-| credentials | [credentials](#credentials-object) | If provided, MUST be an object with valid credentials which the  service broker proxy (or the platform) MUST use to authenticate against the Service Manager. |
 
 All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed.
 
@@ -328,13 +321,7 @@ The response body MUST be a valid JSON Object (`{}`).
     "type": "cloudfoundry",
     "description": "Cloud Foundry on AWS in Frankfurt",
     "created_at": "2016-06-08T16:41:22Z",
-    "updated_at": "2016-06-08T16:41:26Z",
-    "credentials" : {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    }
+    "updated_at": "2016-06-08T16:41:26Z"
 }
 ```
 
@@ -344,7 +331,6 @@ The response body MUST be a valid JSON Object (`{}`).
 | name* | string | Platform name. |
 | type* | string | Type of the platform. |
 | description | string | Platform description. |
-| credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the  service broker proxy (or the platform) MUST use to authenticate against the Service Manager. |
 | created_at | string | The time of the creation in ISO-8601 format |
 | updated_at | string | The time of the last update in ISO-8601 format |
 
@@ -421,12 +407,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "name": "service-broker-name",
     "description": "Service broker providing some valuable services",
-    "credentials": {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    },
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "broker_url": "https://service-broker-url",
@@ -441,7 +421,6 @@ The response body MUST be a valid JSON Object (`{}`).
 | id*            | string | ID of the service broker. MUST be unique across all service brokers registered with the Service Manager. If the same service broker is registered multiple times, each registration will get a different ID. |
 | name*          | string | Name of the service broker. |
 | description    | string | Description of the service broker. |
-| credentials*   | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. If not provided in the request, new credentials MUST be generated. |
 | broker_url*    | string | URL of the service broker. |
 | created_at     | string | the time of creation in ISO-8601 format |
 | updated_at     | string | the time of the last update in ISO-8601 format |
@@ -691,12 +670,6 @@ The response body MUST be a valid JSON Object (`{}`).
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "name": "service-broker-name",
     "description": "Service broker providing some valuable services",
-    "credentials": {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    },
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "broker_url": "https://service-broker-url",
