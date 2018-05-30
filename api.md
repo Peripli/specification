@@ -916,7 +916,8 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| token_issuer_url* | string | URL of the token issuer. The token issuer MUST have a public endpoint `/.well-known/openid-configuration` |
+| token_issuer_url* | string | URL of the token issuer. The token issuer MUST have a public endpoint `/.well-known/openid-configuration` as specified by the [OpenID Provider Configuration](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) |
+
 \* Fields with an asterisk are REQUIRED.
 
 
