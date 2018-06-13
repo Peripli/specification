@@ -708,8 +708,6 @@ The request provides these query string parameters as filters for what to be inc
 | Query-String Field | Type | Description |
 | --- | --- | --- |
 | broker_id | string | ID of a broker from the aggregated catalog. If present, MUST be a non-empty string. Only brokers with the specified ID MUST be included in the response |
-| plan_id | string | ID of a plan from the catalog. If present, MUST be a non-empty string. Only plans with the specified ID MUST be included in the response. |
-| service_id | string | ID of the plan from the catalog. If present, MUST be a non-empty string. Only services with the specified ID MUST be included in the response. |
 
 #### Headers
 
@@ -736,137 +734,141 @@ Responses with any other status code will be interpreted as a failure. The respo
   "brokers" : [{
     "id": "brokerId",
     "name": "service-broker-name",
-    "services": [{
-    "name": "fake-service",
-    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
-    "description": "fake service",
-    "tags": ["no-sql", "relational"],
-    "requires": ["route_forwarding"],
-    "bindable": true,
-    "metadata": {
-      "provider": {
-        "name": "The name"
-      },
-      "listing": {
-        "imageUrl": "http://example.com/cat.gif",
-        "blurb": "Add a blurb here",
-        "longDescription": "A long time ago, in a galaxy far far away..."
-      },
-      "displayName": "The Fake Broker"
-    },
-    "dashboard_client": {
-      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
-      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
-      "redirect_uri": "http://localhost:1234"
-    },
-    "plan_updateable": true,
-    "plans": [{
-      "name": "fake-plan-1",
-      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
-      "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections",
-      "free": false,
+    "catalog": {
+      "services": [{
+      "name": "fake-service",
+      "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+      "description": "fake service",
+      "tags": ["no-sql", "relational"],
+      "requires": ["route_forwarding"],
+      "bindable": true,
       "metadata": {
-        "max_storage_tb": 5,
-        "costs":[
-            {
-               "amount":{
-                  "usd":99.0
-               },
-               "unit":"MONTHLY"
-            },
-            {
-               "amount":{
-                  "usd":0.99
-               },
-               "unit":"1GB of messages over 20GB"
-            }
-         ],
-        "bullets": [
-          "Shared fake server",
-          "5 TB storage",
-          "40 concurrent connections"
-        ]
+        "provider": {
+          "name": "The name"
+        },
+        "listing": {
+          "imageUrl": "http://example.com/cat.gif",
+          "blurb": "Add a blurb here",
+          "longDescription": "A long time ago, in a galaxy far far away..."
+        },
+        "displayName": "The Fake Broker"
       },
-      "schemas": {
-        "service_instance": {
-          "create": {
-            "parameters": {
-              "$schema": "http://json-schema.org/draft-04/schema#",
-              "type": "object",
-              "properties": {
-                "billing-account": {
-                  "description": "Billing account number used to charge use of shared fake server.",
-                  "type": "string"
+      "dashboard_client": {
+        "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
+        "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+        "redirect_uri": "http://localhost:1234"
+      },
+      "plan_updateable": true,
+      "plans": [{
+        "name": "fake-plan-1",
+        "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+        "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections",
+        "free": false,
+        "metadata": {
+          "max_storage_tb": 5,
+          "costs":[
+              {
+                "amount":{
+                    "usd":99.0
+                },
+                "unit":"MONTHLY"
+              },
+              {
+                "amount":{
+                    "usd":0.99
+                },
+                "unit":"1GB of messages over 20GB"
+              }
+          ],
+          "bullets": [
+            "Shared fake server",
+            "5 TB storage",
+            "40 concurrent connections"
+          ]
+        },
+        "schemas": {
+          "service_instance": {
+            "create": {
+              "parameters": {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "properties": {
+                  "billing-account": {
+                    "description": "Billing account number used to charge use of shared fake server.",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "update": {
+              "parameters": {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "properties": {
+                  "billing-account": {
+                    "description": "Billing account number used to charge use of shared fake server.",
+                    "type": "string"
+                  }
                 }
               }
             }
           },
-          "update": {
-            "parameters": {
-              "$schema": "http://json-schema.org/draft-04/schema#",
-              "type": "object",
-              "properties": {
-                "billing-account": {
-                  "description": "Billing account number used to charge use of shared fake server.",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "service_binding": {
-          "create": {
-            "parameters": {
-              "$schema": "http://json-schema.org/draft-04/schema#",
-              "type": "object",
-              "properties": {
-                "billing-account": {
-                  "description": "Billing account number used to charge use of shared fake server.",
-                  "type": "string"
+          "service_binding": {
+            "create": {
+              "parameters": {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "properties": {
+                  "billing-account": {
+                    "description": "Billing account number used to charge use of shared fake server.",
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         }
-      }
-    }, {
-      "name": "fake-plan-2",
-      "id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
-      "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
-      "free": false,
-      "metadata": {
-        "max_storage_tb": 5,
-        "costs":[
-            {
-               "amount":{
-                  "usd":199.0
-               },
-               "unit":"MONTHLY"
-            },
-            {
-               "amount":{
-                  "usd":0.99
-               },
-               "unit":"1GB of messages over 20GB"
-            }
-         ],
-        "bullets": [
-          "40 concurrent connections"
-        ]
-      }
+      }, {
+        "name": "fake-plan-2",
+        "id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
+        "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
+        "free": false,
+        "metadata": {
+          "max_storage_tb": 5,
+          "costs":[
+              {
+                "amount":{
+                    "usd":199.0
+                },
+                "unit":"MONTHLY"
+              },
+              {
+                "amount":{
+                    "usd":0.99
+                },
+                "unit":"1GB of messages over 20GB"
+              }
+          ],
+          "bullets": [
+            "40 concurrent connections"
+          ]
+        }
+      }]
     }]
-   }]
+    }
   },
   {
     "id": "brokerId2",
     "name": "service-broker-name",
-    "services": [{
+    "catalog": {
+        "services": [{
       }]
+    }
   }]
 }
 ```
 
-The `services` object in every element is actually the catalog returned from an OSB `/v2/catalog` call - the actual catalog of the specified broker.
+The `catalog` object in every element is actually the catalog returned from an OSB `/v2/catalog` call - the actual catalog of the specified broker.
 
 | Response field | Type | Description |
 | --- | --- | --- |
@@ -880,11 +882,11 @@ The `services` object in every element is actually the catalog returned from an 
 | --- | --- | --- |
 | name* | string | Name of the service broker. MUST be a non-empty string. |
 | id* | string | Identifier of the service broker. MUST be a non-empty string. |
-| services* | array-of-service-objects | Schema of service objects defined below. MAY be empty. |
+| catalog* | object containing an array-of-service-objects | Schema of service objects defined below. MAY be empty. |
 
 ##### Services Object
 
-Details about the `services` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
+Details about the `catalog` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
 
 
 ## Service Management
