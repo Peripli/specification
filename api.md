@@ -884,7 +884,7 @@ The `catalog` object in every element is actually the catalog returned from an O
 | id* | string | Identifier of the service broker. MUST be a non-empty string. |
 | catalog* | object containing an array-of-service-objects | Schema of service objects defined below. MAY be empty. |
 
-##### Services Object
+##### Catalog Object
 
 Details about the `catalog` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
 
