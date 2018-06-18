@@ -884,11 +884,15 @@ The `services` object in every element is actually the catalog returned from an 
 | id* | string | Identifier of the service broker. MUST be a non-empty string. |
 | catalog* | object | Contains the broker catalog. |
 
+\* Fields with an asterisk are REQUIRED.
+
 ##### Catalog Object
 
 | Field | Type | Description |
 | --- | --- | --- |
 | services* | array-of-service-objects | Schema of service objects defined below. MAY be empty. |
+
+\* Fields with an asterisk are REQUIRED.
 
 ##### Services Object
 
@@ -924,6 +928,8 @@ _Exactly_ one of the properties `basic` or `token` MUST be provided.
 | --- | --- | --- |
 | username* | string | username |
 | password* | string | password |
+
+\* Fields with an asterisk are REQUIRED.
 
 ## Errors
 
