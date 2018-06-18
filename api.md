@@ -868,7 +868,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 }
 ```
 
-The `catalog` object in every element is actually the catalog returned from an OSB `/v2/catalog` call - the actual catalog of the specified broker.
+The `services` object in every element is actually the catalog returned from an OSB `/v2/catalog` call - the actual catalog of the specified broker.
 
 | Response field | Type | Description |
 | --- | --- | --- |
@@ -882,11 +882,17 @@ The `catalog` object in every element is actually the catalog returned from an O
 | --- | --- | --- |
 | name* | string | Name of the service broker. MUST be a non-empty string. |
 | id* | string | Identifier of the service broker. MUST be a non-empty string. |
-| catalog* | object containing an array-of-service-objects | Schema of service objects defined below. MAY be empty. |
+| catalog* | object | Contains the broker catalog. |
 
 ##### Catalog Object
 
-Details about the `catalog` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
+| Field | Type | Description |
+| --- | --- | --- |
+| services* | array-of-service-objects | Schema of service objects defined below. MAY be empty. |
+
+##### Services Object
+
+Details about the `services` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
 
 
 ## Service Management
