@@ -882,7 +882,7 @@ The `services` object in every element is actually the catalog returned from an 
 | --- | --- | --- |
 | name* | string | Name of the service broker. MUST be a non-empty string. |
 | id* | string | Identifier of the service broker. MUST be a non-empty string. |
-| catalog* | object | Contains the broker catalog. |
+| catalog* | object | Contains the service broker catalog. |
 
 \* Fields with an asterisk are REQUIRED.
 
