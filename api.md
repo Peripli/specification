@@ -868,8 +868,6 @@ Responses with any other status code will be interpreted as a failure. The respo
 }
 ```
 
-The `services` object in every element is actually the catalog returned from an OSB `/v2/catalog` call - the actual catalog of the specified broker.
-
 | Response field | Type | Description |
 | --- | --- | --- |
 | brokers* | array-of-broker-objects | Schema of broker objects defined below. MAY be empty. |
