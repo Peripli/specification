@@ -18,6 +18,7 @@
     - [Updating a Service Broker](#updating-a-service-broker)
   - [Aggregated Catalog](#aggregated-catalog)
   - [Service Management](#service-management)
+  - [Information](#information)
   - [Credentials Object](#credentials-object)
   - [Errors](#errors)
 
@@ -895,6 +896,39 @@ Responses with any other status code will be interpreted as a failure. The respo
 ##### Services Object
 
 Details about the `services` object can be found in the [OSB spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#catalog-management)
+
+
+## Information
+
+The Service Manager exposes publicly available information that can be used when accessing its APIs.
+
+### Request
+
+#### Route
+
+`GET /v1/info`
+
+### Response
+
+| Status Code | Description |
+| --- | --- |
+| 200 OK | MUST be returned upon successful processing of this request. The expected response body is below. |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+```json
+{
+    "token_issuer_url": "https://example.com"
+}
+```
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| token_issuer_url* | string | URL of the token issuer. The token issuer MUST have a public endpoint `/.well-known/openid-configuration` as specified by the [OpenID Provider Configuration](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) |
+
+\* Fields with an asterisk are REQUIRED.
 
 
 ## Service Management
