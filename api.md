@@ -21,6 +21,7 @@
   - [Information](#information)
   - [Credentials Object](#credentials-object)
   - [Errors](#errors)
+  - [Content Type](#content-type)
 
 ## Overview
 
@@ -984,3 +985,8 @@ Example:
   "error": "InvalidCredentials",
   "description": "The supplied credentials could not be authorized"
 }
+```
+
+## Content Type
+
+All requests and responses defined in this specification with accompanying bodies SHOULD contain a `Content-Type` header set to `application/json`. If the `Content-Type` is not set, Service Brokers and Platforms MAY still attempt to process the body. If a Service Broker rejects a request due to a mismatched Content-Type or the body is unprocessable it SHOULD respond with `400 Bad Request`.
