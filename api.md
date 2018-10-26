@@ -6,7 +6,7 @@
   - [Overview](#overview)
   - [Platform Management](#platform-management)
     - [Registering a Platform](#registering-a-platform)
-    - [Fetchhing a Platform](#retching-a-platform)
+    - [Fetchhing a Platform](#fetching-a-platform)
     - [Listing Platforms](#listing-platforms)
     - [Updating a Platform](#updating-a-platform)
     - [Deleting a Platform](#deleting-a-platform)
@@ -25,7 +25,7 @@
     - [Updating a Service Instance](#updating-a-service-instance)
     - [Deleting a Service Instance](#deleting-a-service-instance)
   - [Service Binding Management](#service-binding-management)
-    - [Provisioning a Service Binding](#provisioning-a-service-binding)
+    - [Creating a Service Binding](#creating-a-service-binding)
     - [Fetching a Service Binding](#fetchhing-a-service-binding)
     - [Listing Service Binding](#listing-service-bindings)
     - [Updating a Service Binding](#updating-a-service-binding)
@@ -41,7 +41,7 @@
     - [Fetching the State of a Resource](#fetching-the-state-of-a-resource)
     - [Updating the State of a Resource](#updating-the-state-of-a-resource)
   - [Labels Object](#labels-object)
-    - [Adding a Label](#adding-a-label-for-a-resource)
+    - [Adding a Label](#adding-a-label-to-a-resource)
     - [Listing labels](#listing-labels-for-a-resource)
     - [Updating a label](#updating-a-label-for-a-resource)
     - [Deleting a label](#delketing-a-label-for-a-resource)
@@ -812,11 +812,13 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_guid": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   },
   "state": {  
     "ready": "False",
-    "reasons": [  
+    "reasons": [
       "LastOperationSucceeded"
     ],
     "message": "Service Binding is currently being deleted",
@@ -832,7 +834,7 @@ The response body MUST be a valid JSON Object (`{}`).
         "type": "OrphanMitigationRequired",
         "status": "False",
         "reason": "ServiceBrokerResponseSuccess",
-        "message": "Orphan mitigation is not required"
+        "message": "Service Broker returned 202 Accepted for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
       }
     ]
   },
@@ -886,7 +888,9 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_guid": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   },
   "state": {  
     "ready": "False",
@@ -929,8 +933,8 @@ The response body MUST be a valid JSON Object (`{}`).
 | ------------------ | ---- | ----------- |
 | page | int | page of items to fetch. |
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
-| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provied label query will be returned. If present, MUST be a non-empty string. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provied label query will be returned. If present, MUST be a non-empty string. |
+| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
     Example: `GET /v1/service_instances?labelQuery=context_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances that have a label `context_guid` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
     
@@ -974,7 +978,9 @@ The response body MUST be a valid JSON Object (`{}`).
         "parameter2": "value2"
       },
       "labels": {  
-        "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+        "context_guid": [
+          "bvsded31-c303-123a-aab9-8crar19e1218"
+        ]
       },
       "state": {  
         "ready": "True",
@@ -1030,14 +1036,11 @@ The following HTTP Headers are defined for this operation:
   "name": "new-instance-name",
   "parameters": {  
     "parameter1": "value1"
-  },
-  "labels": {  
-    "tenant": "t1"
   }
 }
 ```
 
-All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` and `labels` will override the old values.
+All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` will override the old values.
 
 ### Response
 
@@ -1065,7 +1068,9 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter1": "value1"
   },
   "labels": {  
-    "tenant": "133021rv-12ad-4w61-bc3f-123e4s543c2a"
+    "labelKey": [
+      "labelValue"
+    ]
   },
   "state": {  
     "ready": "False",
@@ -1168,7 +1173,9 @@ The following HTTP Headers are defined for this operation:
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_guid": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   }
 }
 ```
@@ -1203,7 +1210,9 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_guid": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   },
   "state": {  
     "ready": "False",
@@ -1223,7 +1232,7 @@ The response body MUST be a valid JSON Object (`{}`).
         "type": "OrphanMitigationRequired",
         "status": "False",
         "reason": "ServiceBrokerRequestSuccess",
-        "message": "Orphan mitigation is not required"
+        "message": "Service Broker returned 202 Accepted for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114/service_bindings/asd124bc21-df28-4891-8d91-46334e04600d"
       }
     ]
   },
@@ -1278,7 +1287,9 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_guid": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   },
   "state": {  
     "ready": "False",
@@ -1323,8 +1334,8 @@ The request provides these query string parameters as useful hints for brokers.
 | ------------------ | ---- | ----------- |
 | page | int | page of items to fetch. |
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
-| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provied label query will be returned. If present, MUST be a non-empty string. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provied label query will be returned. If present, MUST be a non-empty string. |
+| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
     Example: `GET /v1/service_bindings?labelQuery=context_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings that have a label `context_guid` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
     
@@ -1371,7 +1382,9 @@ The response body MUST be a valid JSON Object (`{}`).
         "parameter2": "value2"
       },
       "labels": {  
-        "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+        "context_guid": [
+          "bvsded31-c303-123a-aab9-8crar19e1218"
+        ]
       },
       "state": {  
         "ready": "True",
@@ -1427,14 +1440,11 @@ The following HTTP Headers are defined for this operation:
   "name": "new-binding-name",
   "parameters": {  
     "parameter1": "newval"
-  },
-  "labels": {  
-    "tenant": "t1"
   }
 }
 ```
 
-All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` and `labels` will override the old values.
+All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` will override the old values.
 
 ### Response
 
@@ -1451,7 +1461,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 The response body MUST be a valid JSON Object (`{}`).
 
-##### Service Instance Object
+##### Service Binding Object
 
 ```json
 {  
@@ -1465,7 +1475,9 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter1": "newval"
   },
   "labels": {  
-    "tenant": "t1"
+    "tenant": [
+      "t1"
+    ]
   },
   "state": {  
     "ready": "False",
@@ -1485,7 +1497,7 @@ The response body MUST be a valid JSON Object (`{}`).
         "type": "OrphanMitigationRequired",
         "status": "False",
         "reason": "ServiceBrokerResponseSuccess",
-        "message": "Service Broker returned 200 OK for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
+        "message": "Service Broker returned 200 OK for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114/service_bindings/fe173a83-df28-4891-8d91-46334e04600d"
       }
     ]
   },
@@ -1582,9 +1594,6 @@ The response body MUST be a valid JSON Object (`{}`).
   "description": "service description",
   "displayName": "postgres",
   "longDescription": "local postgres",
-  "labels": {  
-    "labelKey": "labelValue"
-  },
   "service_broker_guid": "0e7250aa-364f-42c2-8fd2-808b0224376f",
   "bindable": true,
   "plan_updateable": false,
@@ -1595,7 +1604,7 @@ The response body MUST be a valid JSON Object (`{}`).
 }
 ```
 
-### Retrieving all Services
+### Listing Services
 
 ### Request
 
@@ -1609,7 +1618,7 @@ The response body MUST be a valid JSON Object (`{}`).
 | ------------------ | ---- | ----------- |
 | page | int | page of items to fetch. |
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provied label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
     Example: `GET /v1/services?fieldQuery=service_broker_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service  for the servie broker with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
@@ -1646,11 +1655,8 @@ The response body MUST be a valid JSON Object (`{}`).
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service",
       "description": "service description",
-      "displayName": "postgres",
-      "longDescription": "local postgres",
-      "labels": {  
-        "labelKey": "labelValue"
-      },
+      "displayName": "display-name",
+      "longDescription": "long-name",
       "service_broker_guid": "0e7250aa-364f-42c2-8fd2-808b0224376f",
       "bindable": true,
       "plan_updateable": false,
@@ -1748,9 +1754,9 @@ The response body MUST be a valid JSON Object (`{}`).
 | ------------------ | ---- | ----------- |
 | page | int | page of items to fetch. |
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provied label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
-    Example: `GET /v1/plans?fieldQuery=service_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans  for the servie with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/plans?fieldQuery=service_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans for the service with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 #### Headers
 
@@ -1887,7 +1893,7 @@ In order to maintain the state up to date, each resource that contains a `state`
 
 `GET /v1/resource/:resource_id/state`
 
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
+`:resource_id` MUST be the ID of a previously created resource.
 
 #### Headers
 
@@ -1936,8 +1942,7 @@ Example state:
 
 ### Updating the state of a resource
 
-Allows updating the `conditions` that form up the state. The `ready`, `reasons` and `message` SHOULD be recalculated
-after each `state` update.
+Allows updating the `conditions` that form up the state. The `ready`, `reasons` and `message` SHOULD be recalculated after each `state` update.
 
 ### Request
 
@@ -2013,24 +2018,25 @@ Example state:
 
 A label is a key-value pair that can be attached to a resource. Service Manager resources MAY have any number of labels.
 
-This allows querying (filtering) on the `Retrieve All` API of the resource based on multiple labels. The Service Manager MAY
+This allows querying (filtering) on the `List` API of the resource based on multiple labels. The Service Manager MAY
 attach additional labels to the resources and MAY restrict updates and deletes for some of the labels.
 
 Example:
 
 ```json
 {  
-  "label1Key": "label1Value",
-  "label2Key": [  
-    "label2Value1",
-    "label2Value2"
+  "label1Key": [
+    "label1Value"
+  ],
+  "label2Key": [
+    "label2Value1"
   ]
 }
 ```
 
 Resource that MAY contain `labels`  MUST also expose APIs for adding, retrieving, updating and deleting the labels. 
 
-### Add a label for a resource
+### Adding a Label to a Resource
 
 ### Request
 
@@ -2052,11 +2058,45 @@ The following HTTP Headers are defined for this operation:
 
 #### Body
 
+Example:
+
+```json
+{  
+  "label1Key": [
+    "label1Value"
+  ],
+  "label2Key": [
+    "label2Value1"
+  ]
+}
+```
+
 ### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 201 Created | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 409 Conflict | MUST be returned if a resource with the same `id` or `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 
 #### Body
 
-### List labels for a resource
+The response body MUST be a valid JSON Object (`{}`).
+
+Example:
+
+```json
+{  
+  "label1Key": [
+    "label1Value"
+  ],
+  "label2Key": [
+    "label2Value1"
+  ]
+}
+```
+
+### Listing Labels for a Resource
 
 ### Request
 
@@ -2064,7 +2104,7 @@ The following HTTP Headers are defined for this operation:
 
 `GET /v1/resource/:resource_id/labels`
 
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
+`:resource_id` MUST be the ID of a previously created resource.
 
 #### Headers
 
@@ -2080,15 +2120,30 @@ The following HTTP Headers are defined for this operation:
 
 #### Body
 
-### Updating a label for a resource
+The response body MUST be a valid JSON Object (`{}`).
+
+Example:
+
+```json
+{  
+  "label1Key": [
+    "label1Value"
+  ],
+  "label2Key": [
+    "label2Value1"
+  ]
+}
+```
+
+### Updating a Label for a Resource
 
 ### Request
 
 #### Route
 
-`PATCH /v1/resource/:resource_id/labels`
+`PUT /v1/resource/:resource_id/labels/:label_key`
 
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
+`:resource_id` MUST be the ID of a previously created resource.
 
 #### Headers
 
@@ -2102,9 +2157,25 @@ The following HTTP Headers are defined for this operation:
 
 #### Body
 
+Example:
+```json
+[
+  "patchedValue"
+]
+```
+
 ### Response
 
 #### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+Example:
+```json
+{  
+  "label1Key": [ "patchedValue" ]
+}
+```
 
 ### Deleting a label for a resource
 
@@ -2114,9 +2185,87 @@ The following HTTP Headers are defined for this operation:
 
 `DELETE /v1/resource/:resource_id/labels/:label_key`
 
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
+`:resource_id` MUST be the ID of a previously created resource.
 
 `:label_key` MUST be the key of a previously created label for this resource.
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+For a success response, the expected response body is `{}`.
+
+### Adding a Value to a Label for a Resource
+
+### Request
+
+#### Route
+
+`POST /v1/resource/:resource_id/labels/:label_key`
+
+`:resource_id` MUST be the ID of a previously created resource.
+
+`:label_key` MUST be the key of a previously created label for this resource.
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+#### Body
+
+Example:
+```json
+[
+  "patchedValue"
+]
+```
+
+### Response
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+Example:
+```json
+{  
+  "label1Key": [ 
+    "label1Value1", "patchedValue" 
+  ]
+}
+```
+
+### Deleting a Value from a Label for a Resource
+
+### Request
+
+#### Route
+
+`DELETE /v1/resource/:resource_id/labels/:label_key/:label_value`
+
+`:resource_id` MUST be the ID of a previously created resource.
+
+`:label_key` MUST be the key of a previously created label for this resource.
+
+`:label_value` MUST be the key of a previously created label for this resource.
 
 #### Headers
 
