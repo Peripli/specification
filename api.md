@@ -199,6 +199,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/platforms`
 
+This endpoint supports [paging](#paging).
+
 #### Headers
 
 The following HTTP Headers are defined for this operation:
@@ -223,7 +225,9 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {
-  "platforms": [
+  "has_more_items": false,
+  "num_items": 2,
+  "items": [
     {
       "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
       "name": "cf-eu-10",
@@ -518,6 +522,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/service_brokers`
 
+This endpoint supports [paging](#paging).
+
 #### Headers
 
 The following HTTP Headers are defined for this operation:
@@ -542,7 +548,9 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {
-  "brokers": [
+  "has_more_items": false,
+  "num_item": 2,
+  "items": [
     {
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "name": "service-broker-name",
@@ -670,6 +678,7 @@ The response body MUST be a valid JSON Object (`{}`).
 When the Service Manager receives a delete request, it MUST delete any resources it created during registration of this service broker.
 
 Deletion of a service broker for which there are Service Instances created MUST fail. This behavior can be overridden by specifying the `force` query parameter which will remove the service broker regardless of whether there are Service Instances created by it.
+
 
 ### Request
 
@@ -922,12 +931,12 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/service_instances`
 
+This endpoint supports [paging](#paging).
+
 #### Parameters
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| page | int | page of items to fetch. |
-| pageSize | int | number of items per page. If not provided, defaults to 50. |
 | labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
@@ -959,10 +968,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {  
-  "total_results": 1,
-  "total_pages": 1,
-  "next_url": "",
-  "prev_url": "",
+  "has_more_items": false,
+  "num_items": 1,
   "items": [  
     {  
       "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
@@ -1316,14 +1323,14 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/service_bindings`
 
+This endpoint supports [paging](#paging).
+
 #### Parameters
 
 The request provides these query string parameters as useful hints for brokers.
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| page | int | page of items to fetch. |
-| pageSize | int | number of items per page. If not provided, defaults to 50. |
 | labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
@@ -1355,10 +1362,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {  
-  "total_results": 1,
-  "total_pages": 1,
-  "next_url": "",
-  "prev_url": "",
+  "has_more_items": false,
+  "num_items": 1,
   "items": [  
     {  
       "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
@@ -1600,12 +1605,12 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/services`
 
+This endpoint supports [paging](#paging).
+
 #### Parameters
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| page | int | page of items to fetch. |
-| pageSize | int | number of items per page. If not provided, defaults to 50. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
     Example: `GET /v1/services?fieldQuery=service_broker_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service  for the servie broker with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
@@ -1634,10 +1639,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {  
-  "total_results": 1,
-  "total_pages": 1,
-  "next_url": "",
-  "prev_url": "",
+  "has_more_items": true,
+  "num_items": 523,
   "items":[  
     {  
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
@@ -1736,12 +1739,12 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `GET /v1/plans`
 
+This endpoint supports [paging](#paging).
+
 #### Parameters
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| page | int | page of items to fetch. |
-| pageSize | int | number of items per page. If not provided, defaults to 50. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
     Example: `GET /v1/plans?fieldQuery=service_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans for the service with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
@@ -1770,10 +1773,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {  
-  "total_results": 1,
-  "total_pages": 1,
-  "next_url": "",
-  "prev_url": "",
+  "has_more_items": true,
+  "num_items": 732,
   "items": [  
     {  
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
@@ -1979,6 +1980,55 @@ Example: PATCH v1/:resource/:resource_id/ with body:
   ]
 ...  
 ```
+
+
+## Paging
+
+All list endpoints MUST support paging. 
+
+There are two types of paging. 
+1. Paging by skipping items. The `skip_count` parameter defines how many items should be skipped. The order of the items is server specific, but MUST NOT change between calls.
+2. Paging by providing the ID of the last item of the previous page. The items MUST be ordered by their creation date. This paging method guarantees that no item is missed but it may be slower for big lists.
+
+Paging can be controlled by the following parameters. 
+
+
+### Parameters
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| max_items | int | the maximum number of items to return in the response. The server MUST NOT exceed this maximum but  MAY return a smaller number of items than the specified value. The server SHOULD NOT return an error if `max_items` exceeds the internally supported page size. It SHOULD return a smaller number of items instead. The default is implementation specific.
+| skip_count | int | the number of potential results that the repository MUST skip/page over before returning any results. Defaults to 0. |
+| last_id | string | the ID of the last item of the previous page. An empty string indicates that the first page is requested. |
+
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 400 Bad Request | MUST be returned if the values of the `max_items` parameter or the `skip_count` parameter is not a positive number or if both, the `skip_count` parameter and the `last_id` parameter are provided. |
+
+
+#### Body
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed).
+| num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
+| items* | array of objects | the list of items. This list MAY be empty. |
+
+\* Fields with an asterisk are REQUIRED.
+
+```json
+{  
+  "has_more_items": true,
+  "num_items": 42,
+  "items": [
+      ...
+  ]
+}
+```
+
 
 ## Errors
 
