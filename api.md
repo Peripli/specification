@@ -38,13 +38,7 @@
     - [Listing Service Plans](#listing-service-plans)
   - [Credentials Object](#credentials-object)
   - [State Object](#state-object)
-    - [Fetching the State of a Resource](#fetching-the-state-of-a-resource)
-    - [Updating the State of a Resource](#updating-the-state-of-a-resource)
   - [Labels Object](#labels-object)
-    - [Adding a Label](#adding-a-label-to-a-resource)
-    - [Listing labels](#listing-labels-for-a-resource)
-    - [Updating a label](#updating-a-label-for-a-resource)
-    - [Deleting a label](#delketing-a-label-for-a-resource)
   - [Errors](#errors)
   - [Content Type](#content-type)
 
@@ -677,7 +671,6 @@ When the Service Manager receives a delete request, it MUST delete any resources
 
 Deletion of a service broker for which there are Service Instances created MUST fail. This behavior can be overridden by specifying the `force` query parameter which will remove the service broker regardless of whether there are Service Instances created by it.
 
-
 ### Request
 
 #### Route
@@ -775,13 +768,15 @@ The following HTTP Headers are defined for this operation:
 ```json
 {  
   "name": "my-service-instance",
-  "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+  "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": "bvsded31-c303-123a-aab9-8crar19e1218"
+    "context_id": [
+        "bvsded31-c303-123a-aab9-8crar19e1218"
+    ]
   }
 }
 ```
@@ -790,9 +785,9 @@ The following HTTP Headers are defined for this operation:
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 201 Created     | MUST be returned if the resource was synchronously created. |
+| 201 Created     | MUST be returned if the resource was created. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict    | MUST be returned if a resource with the same `id` or `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 409 Conflict    | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -806,13 +801,13 @@ The response body MUST be a valid JSON Object (`{}`).
 {  
   "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "my-service-instance",
-  "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": [
+    "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
@@ -821,7 +816,7 @@ The response body MUST be a valid JSON Object (`{}`).
     "reasons": [
       "LastOperationSucceeded"
     ],
-    "message": "Service Binding is currently being deleted",
+    "message": "Service Binding is currently being created",
     "conditions": [  
       {  
         "type": "LastOperationSucceeded",
@@ -882,18 +877,18 @@ The response body MUST be a valid JSON Object (`{}`).
 {  
   "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "my-service-instance",
-  "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": [
+    "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
   "state": {  
-    "ready": "False",
+    "ready": "True",
     "reasons": [  
 
     ],
@@ -936,9 +931,9 @@ The response body MUST be a valid JSON Object (`{}`).
 | labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
-    Example: `GET /v1/service_instances?labelQuery=context_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances that have a label `context_guid` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances that have a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
     
-    Example: `GET /v1/service_instances?fieldQuery=service_plan_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances for the plan with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances for the plan with ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 #### Headers
 
@@ -972,13 +967,13 @@ The response body MUST be a valid JSON Object (`{}`).
     {  
       "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-instance",
-      "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+      "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
       "parameters": {  
         "parameter1": "value1",
         "parameter2": "value2"
       },
       "labels": {  
-        "context_guid": [
+        "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
@@ -1036,7 +1031,14 @@ The following HTTP Headers are defined for this operation:
   "name": "new-instance-name",
   "parameters": {  
     "parameter1": "value1"
-  }
+  },
+  "labels": [
+    { "op": "add", "key": "label1", "values": ["test1", "test2"] },
+    { "op": "add_value", "key": "label2", "values": ["test3"] },
+    { "op": "replace", "key": "label2", "values": ["test2"] },
+    { "op": "remove", "key": "label2" },
+    { "op": "remove_value", "key": "label1", "values": ["test2"] }
+  ]  
 }
 ```
 
@@ -1063,13 +1065,13 @@ The response body MUST be a valid JSON Object (`{}`).
 {  
   "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "new-instance-name",
-  "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "parameters": {  
     "parameter1": "value1"
   },
   "labels": {  
-    "labelKey": [
-      "labelValue"
+    "label1": [
+      "value1"
     ]
   },
   "state": {  
@@ -1167,13 +1169,13 @@ The following HTTP Headers are defined for this operation:
 ```json
 {  
   "name": "my-service-binding",
-  "service_instance_guid": "asd124bc21-df28-4891-8d91-46334e04600d",
+  "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": [
+    "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   }
@@ -1201,7 +1203,7 @@ The response body MUST be a valid JSON Object (`{}`).
 ```json
 {  
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
-  "service_instance_guid": "asd124bc21-df28-4891-8d91-46334e04600d",
+  "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
   "credentials": {  
     "creds-key-63": "creds-val-63"
   },
@@ -1210,7 +1212,7 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": [
+    "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
@@ -1227,12 +1229,6 @@ The response body MUST be a valid JSON Object (`{}`).
         "reason": "InProgess",
         "message": "Delete deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 is still in progress",
         "name": "Delete"
-      },
-      {  
-        "type": "OrphanMitigationRequired",
-        "status": "False",
-        "reason": "ServiceBrokerRequestSuccess",
-        "message": "Service Broker returned 202 Accepted for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114/service_bindings/asd124bc21-df28-4891-8d91-46334e04600d"
       }
     ]
   },
@@ -1278,7 +1274,7 @@ The response body MUST be a valid JSON Object (`{}`).
 {  
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
   "name": "my-service-binding",
-  "service_instance_guid": "asd124bc21-df28-4891-8d91-46334e04600d",
+  "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
   "credentials": {  
     "creds-key-63": "creds-val-63"
   },
@@ -1287,7 +1283,7 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter2": "value2"
   },
   "labels": {  
-    "context_guid": [
+    "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
@@ -1304,12 +1300,6 @@ The response body MUST be a valid JSON Object (`{}`).
         "reason": "Completed",
         "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
         "name": "Create"
-      },
-      {  
-        "type": "OrphanMitigationRequired",
-        "status": "True",
-        "reason": "ServiceBrokerTimeout",
-        "message": "Service Broker request timeout: PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114/service_bindings/138001bc-80bd-4d67-bf3a-956e4w543c3c"
       }
     ]
   },
@@ -1337,9 +1327,9 @@ The request provides these query string parameters as useful hints for brokers.
 | labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
-    Example: `GET /v1/service_bindings?labelQuery=context_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings that have a label `context_guid` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/service_bindings?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings that have a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
     
-    Example: `GET /v1/service_bindings?fieldQuery=service_instance_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings for the service instance with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/service_bindings?fieldQuery=service_instance_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings for the service instance with ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 #### Headers
 
@@ -1373,7 +1363,7 @@ The response body MUST be a valid JSON Object (`{}`).
     {  
       "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
       "name": "my-service-binding",
-      "service_instance_guid": "asd124bc21-df28-4891-8d91-46334e04600d",
+      "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
       "credentials": {  
         "creds-key-63": "creds-val-63"
       },
@@ -1382,7 +1372,7 @@ The response body MUST be a valid JSON Object (`{}`).
         "parameter2": "value2"
       },
       "labels": {  
-        "context_guid": [
+        "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
@@ -1399,12 +1389,6 @@ The response body MUST be a valid JSON Object (`{}`).
             "reason": "Completed",
             "message": "Update deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
             "name": "Update"
-          },
-          {  
-            "type": "OrphanMitigationRequired",
-            "status": "False",
-            "reason": "ServiceBrokerResponseOK",
-            "message": "Service Broker returned 200 OK to PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
           }
         ]
       },
@@ -1440,7 +1424,14 @@ The following HTTP Headers are defined for this operation:
   "name": "new-binding-name",
   "parameters": {  
     "parameter1": "newval"
-  }
+  },
+  "labels": [
+    { "op": "add", "key": "label1", "values": ["test1", "test2"] },
+    { "op": "add_value", "key": "label2", "values": ["test3"] },
+    { "op": "replace", "key": "label2", "values": ["test2"] },
+    { "op": "remove", "key": "label2" },
+    { "op": "remove_value", "key": "label1", "values": ["test2"] }
+  ]  
 }
 ```
 
@@ -1467,7 +1458,7 @@ The response body MUST be a valid JSON Object (`{}`).
 {  
   "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "new-binding-name",
-  "service_plan_guid": "fe173a83-df28-4891-8d91-46334e04600d",
+  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "credentials": {  
     "creds-key-63": "creds-val-63"
   },
@@ -1475,8 +1466,11 @@ The response body MUST be a valid JSON Object (`{}`).
     "parameter1": "newval"
   },
   "labels": {  
-    "tenant": [
-      "t1"
+    "context_id": [
+      "bvsded31-c303-123a-aab9-8crar19e1218"
+    ],
+    "label1": [
+      "value1"
     ]
   },
   "state": {  
@@ -1492,12 +1486,6 @@ The response body MUST be a valid JSON Object (`{}`).
         "reason": "InProcess",
         "message": "Updating deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
         "name": "Update"
-      },
-      {  
-        "type": "OrphanMitigationRequired",
-        "status": "False",
-        "reason": "ServiceBrokerResponseSuccess",
-        "message": "Service Broker returned 200 OK for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114/service_bindings/fe173a83-df28-4891-8d91-46334e04600d"
       }
     ]
   },
@@ -1594,7 +1582,7 @@ The response body MUST be a valid JSON Object (`{}`).
   "description": "service description",
   "displayName": "postgres",
   "longDescription": "local postgres",
-  "service_broker_guid": "0e7250aa-364f-42c2-8fd2-808b0224376f",
+  "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
   "bindable": true,
   "plan_updateable": false,
   "instances_retrievable": false,
@@ -1620,7 +1608,7 @@ The response body MUST be a valid JSON Object (`{}`).
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
-    Example: `GET /v1/services?fieldQuery=service_broker_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service  for the servie broker with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/services?fieldQuery=service_broker_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service  for the servie broker with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 #### Headers
 
@@ -1657,7 +1645,7 @@ The response body MUST be a valid JSON Object (`{}`).
       "description": "service description",
       "displayName": "display-name",
       "longDescription": "long-name",
-      "service_broker_guid": "0e7250aa-364f-42c2-8fd2-808b0224376f",
+      "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
       "bindable": true,
       "plan_updateable": false,
       "instances_retrievable": false,
@@ -1712,7 +1700,7 @@ The response body MUST be a valid JSON Object (`{}`).
   "name": "plan-name",
   "free": false,
   "description": "description",
-  "service_guid": "1ccab853-87c9-45a6-bf99-603032d17fe5",
+  "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
   "extra": null,
   "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
   "public": true,
@@ -1756,7 +1744,7 @@ The response body MUST be a valid JSON Object (`{}`).
 | pageSize | int | number of items per page. If not provided, defaults to 50. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
     
-    Example: `GET /v1/plans?fieldQuery=service_guid%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans for the service with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/plans?fieldQuery=service_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans for the service with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 #### Headers
 
@@ -1792,7 +1780,7 @@ The response body MUST be a valid JSON Object (`{}`).
       "name": "plan-name",
       "free": false,
       "description": "description",
-      "service_guid": "1ccab853-87c9-45a6-bf99-603032d17fe5",
+      "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
       "extra": null,
       "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
       "public": true,
@@ -1822,7 +1810,8 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ## Service Visibilities Management
 
-TODO 
+There are currently ongoing dicussions as to how platform and service visilibities should be handled in  SM.
+TODO: Add content here.
 
 ## OSB Management
 
@@ -1891,7 +1880,9 @@ In order to maintain the state up to date, each resource that contains a `state`
 
 #### Route
 
-`GET /v1/resource/:resource_id/state`
+`GET /v1/:resource/:resource_id/state`
+
+`:resource` is a resource that has a state (for example service_instances)
 
 `:resource_id` MUST be the ID of a previously created resource.
 
@@ -1940,80 +1931,6 @@ Example state:
 }
 ```
 
-### Updating the state of a resource
-
-Allows updating the `conditions` that form up the state. The `ready`, `reasons` and `message` SHOULD be recalculated after each `state` update.
-
-### Request
-
-#### Route
-
-`PATCH /v1/resource/:resource_id/state`
-
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
-
-```json
-{  
-  "conditions": [  
-    {  
-      "type": "LastOperationSucceeded",
-      "status": "True",
-      "reason": "Completed",
-      "message": "Successfully updated resource r-0941-12c4b6f2-335a-44a3-b971-424ec78c7353"
-    }
-  ]
-}
-```
-
-All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Only data within the `conditions` MAY be updated. 
-Conditions are identified by their `type`. The types of the conditions within the state of a resource are defined by the Service Manager and cannot be changed.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`). It contains the [state object](#state-object) for this resource.
-
-Example state:
-
-```json
-{  
-  "ready": "True",
-  "reasons": [  
-
-  ],
-  "message": "Resource is currently being deleted",
-  "conditions": [  
-    {  
-      "type": "LastOperationSucceeded",
-      "status": "True",
-      "reason": "Completed",
-      "message": "Successfully updated resource r-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
-      "name": "Update"
-    }
-  ]
-}
-```
-
 ## Labels Object
 
 A label is a key-value pair that can be attached to a resource. Service Manager resources MAY have any number of labels.
@@ -2034,256 +1951,34 @@ Example:
 }
 ```
 
-Resource that MAY contain `labels`  MUST also expose APIs for adding, retrieving, updating and deleting the labels. 
+### Patching Labels
 
-### Adding a Label to a Resource
+The PATCH APIs of the resources that support labels MUST support the following `label operations` in order to update labels and label values.
 
-### Request
+| Operation | Description |
+| --------- | ----------- |
+| add | Adds a new label with the name in `label`. The `value` MUST be a string or an array of strings. If the label already exists, the operation fails. |
+| add_value | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
+| replace | Replaces a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
+| replace_value | Replaces a value in a label. The `value` MUST be a string. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
+| remove_label | Removes a label. If the label does not exist, the operation fails. |
+| remove_values | Removes a value from a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails |
 
-#### Route
+If one operations fails, none of the changes will be applied.
 
-`POST /v1/resource/:resource_id/labels`
+Example: PATCH v1/:resource/:resource_id/ with body:
 
-`:resource_id` MUST be the ID of a previously created resource that contains a state.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
-
-Example:
-
-```json
-{  
-  "label1Key": [
-    "label1Value"
-  ],
-  "label2Key": [
-    "label2Value1"
+```
+...
+"labels": [
+    { "op": "add", "key": "label1", "values": ["test1", "test2"] },
+    { "op": "add_value", "key": "label2", "values": ["test3"] },
+    { "op": "replace", "key": "label2", "values": ["test2"] },
+    { "op": "remove", "key": "label2" },
+    { "op": "remove_value", "key": "label1", "values": ["test2"] }
   ]
-}
+...  
 ```
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 201 Created | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a resource with the same `id` or `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-Example:
-
-```json
-{  
-  "label1Key": [
-    "label1Value"
-  ],
-  "label2Key": [
-    "label2Value1"
-  ]
-}
-```
-
-### Listing Labels for a Resource
-
-### Request
-
-#### Route
-
-`GET /v1/resource/:resource_id/labels`
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-Example:
-
-```json
-{  
-  "label1Key": [
-    "label1Value"
-  ],
-  "label2Key": [
-    "label2Value1"
-  ]
-}
-```
-
-### Updating a Label for a Resource
-
-### Request
-
-#### Route
-
-`PUT /v1/resource/:resource_id/labels/:label_key`
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
-
-Example:
-```json
-[
-  "patchedValue"
-]
-```
-
-### Response
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-Example:
-```json
-{  
-  "label1Key": [ "patchedValue" ]
-}
-```
-
-### Deleting a label for a resource
-
-### Request
-
-#### Route
-
-`DELETE /v1/resource/:resource_id/labels/:label_key`
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-`:label_key` MUST be the key of a previously created label for this resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
-
-### Adding a Value to a Label for a Resource
-
-### Request
-
-#### Route
-
-`POST /v1/resource/:resource_id/labels/:label_key`
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-`:label_key` MUST be the key of a previously created label for this resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
-
-Example:
-```json
-[
-  "patchedValue"
-]
-```
-
-### Response
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-Example:
-```json
-{  
-  "label1Key": [ 
-    "label1Value1", "patchedValue" 
-  ]
-}
-```
-
-### Deleting a Value from a Label for a Resource
-
-### Request
-
-#### Route
-
-`DELETE /v1/resource/:resource_id/labels/:label_key/:label_value`
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-`:label_key` MUST be the key of a previously created label for this resource.
-
-`:label_value` MUST be the key of a previously created label for this resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
 
 ## Errors
 
