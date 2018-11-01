@@ -95,6 +95,8 @@ The body must be a valid JSON Object (`{}`).
 
 For a success response, the response body MAY be `{}`.
 
+Some APIs may allow passing in the resource entity `id` (that is the id to be used to uniquely identify the resource entity) for backward compatibility reasons. If an `id` is not passed as part of the request body, the Service Manager takes care of generating one. The `id` field MUST be returned as part of the response of a call to the Location URL.
+
 ### Response
 
 | Status Code | Description |
@@ -108,6 +110,8 @@ Responses with any other status code will be interpreted as a failure. The respo
 #### Body
 
 The response body MUST be a valid JSON Object (`{}`).
+
+**Note:** In the case of a failed creation of a resource entity, the resource entity at the Location URL still exists for a certain period of time and returns proper `state` to reflect the creation failure.
 
 ## Fetching a Resource Entity
 
@@ -334,6 +338,8 @@ Responses with any other status code will be interpreted as a failure. The respo
 The response body MUST be a valid JSON Object (`{}`).
 
 For a success response, the expected response body MUST be `{}`.
+
+**Note:** A response to a call to the Location URL will always return at least the `state` of the resource entity until the resource entity is gone (fully deleted) - then a `404 Not Found` MUST be returned.
 
 ## Platform Management
 
@@ -736,6 +742,8 @@ Creation of a `service instance` resource entity MUST comply with [creating a re
 }
 ```
 
+**Note:** Service Manager MUST also handle [mitigating orphans](#orphans-mitigation) in the context of service instances.
+
 ## Fetching a Service Instance
 
 Fetching of a `service instance` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
@@ -894,7 +902,7 @@ Creation of a `service binding` resource entity MUST comply with [creating a res
 }
 ```
 
-\* Fields with an asterisk are REQUIRED.
+**Note:** Service Manager MUST also handle [mitigating orphans](#orphans-mitigation) in the context of service bindings.
 
 ## Fetching a Service Binding
 
@@ -1441,3 +1449,7 @@ Example:
 ## Content Type
 
 All requests and responses defined in this specification with accompanying bodies SHOULD contain a `Content-Type` header set to `application/json`. If the `Content-Type` is not set, Service Brokers and Platforms MAY still attempt to process the body. If a Service Broker rejects a request due to a mismatched Content-Type or the body is unprocessable it SHOULD respond with `400 Bad Request`.
+
+## Mitigating Orphans
+
+Service Manager MUST also handle properly the orphan mitigation process as described in the [orphan's section](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#orphans) of the OSB spec. How this is done is an implementation detail. One possible way would be for the `state` of service instances to include an `OrphanMitigation` `condition` that contains a details whether orphan mitigation is required or not. When orphan mitigation is required, the relevant process that takes actions based on the `state` MUST take the necessary steps (keep trying to delete the resource entity) to ensure orphans are mitigated correctly.
