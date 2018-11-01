@@ -4,6 +4,13 @@
 ## Table of Contents
 
   - [Overview](#overview)
+  - [Asynchronous Operations](#asynchronous-operations)
+  - [General Resource Management](#general-resource-management)
+    - [Creating a Resource Entity](#creating-a-resource-entity)
+    - [Fetching a Resource Entity](#fetching-a-resource-entity)
+    - [Listing all Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
+    - [Patching a Resource Entity](#patching-a-resource-entity)
+    - [Deleting a Resource Entity](#deleting-a-resource-entity)
   - [Platform Management](#platform-management)
     - [Registering a Platform](#registering-a-platform)
     - [Fetchhing a Platform](#fetching-a-platform)
@@ -16,8 +23,6 @@
     - [Listing Service Brokers](#listing-service-brokers)
     - [Updating a Service Broker](#updating-a-service-broker)
     - [Deleting a Service Broker](#deleting-a-service-broker)
-  - [Information](#information)
-  - [OSB Management](#osb-management)
   - [Service Instance Management](#service-instance-management)
     - [Provisioning a Service Instance](#provisioning-a-service-instance)
     - [Fetching a Service Instance](#fetchhing-a-service-instance)
@@ -26,16 +31,18 @@
     - [Deleting a Service Instance](#deleting-a-service-instance)
   - [Service Binding Management](#service-binding-management)
     - [Creating a Service Binding](#creating-a-service-binding)
-    - [Fetching a Service Binding](#fetchhing-a-service-binding)
+    - [Fetching a Service Binding](#fetching-a-service-binding)
     - [Listing Service Binding](#listing-service-bindings)
     - [Updating a Service Binding](#updating-a-service-binding)
     - [Deleting a Service Binding](#deleting-a-service-binding)
-  - [Service Management](#service-management)
-    - [Fetching a Service](#fetchhing-a-service)
-    - [Listing Services](#listing-services)
+  - [Service Offering Management](#service-offering-management)
+    - [Fetching a Service](#fetchhing-a-service-offering)
+    - [Listing Services](#listing-service-offerings)
   - [Service Plan Management](#service-plan-management)
     - [Fetching a Service Plan](#fetchhing-a-service-plan)
     - [Listing Service Plans](#listing-service-plans)
+  - [Information Management](#information-management)
+  - [OSB Management](#osb-management)
   - [Credentials Object](#credentials-object)
   - [State Object](#state-object)
   - [Labels Object](#labels-object)
@@ -44,41 +51,313 @@
 
 ## Overview
 
-The Service Manager API defines an HTTP interface that allows the management of platforms, brokers, services, plans, service instances and service bindings from a central place. In general, the Service Manager API can be split into two groups - a Service Controller API that allows the management of platform resources (SM as a platform) and an OSB compliant API. The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/) and allows the Service Manager to act as a broker.
+The Service Manager API defines an HTTP interface that allows the management of platforms, brokers, services, plans, service instances and service bindings from a central place. In general, the Service Manager API can be split into two groups - a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in SM (SM as a platform) and an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in SM (SM as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
 One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
 A CLI-friendly string is all lowercase, with no spaces. Keep it short -- imagine a user having to type it as an argument for a longer command.
 
-## Platform Management
+## Asynchronous Operations
 
-## Registering a Platform
+The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the `state` of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state. 
 
-In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform means that a new service broker proxy for this particular platform has been registered with the Service Manager.
+### Concurrent Mutating Requests
+
+Service Manager does not support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and id `:resource_id` is currently being created/updated/deleted and this operation is in progress, then no other asynchronous mutating operation can be executed on the resource of type `:resource_type` and id `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
+
+## General Resource Management
+
+The following section generalizes how Service Manager resources are managed. A `resource_type` represents one set of resource entities (for example service brokers). A `resource_entity` represents one record of a resource type (for example one service broker record).
+
+## Creating a Resource Entity
 
 ### Request
 
 #### Route
 
-`POST /v1/platforms`
+`POST /v1/:resources_type`
 
-#### Headers
+`:resources_type` MUST be a valid Service Manager resource type.
 
-The following HTTP Headers are defined for this operation:
+#### Headers 
+
+The following HTTP Headers are defined for the operations:
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 \* Headers with an asterisk are REQUIRED.
 
 #### Body
+
+The body must be a valid JSON Object (`{}`). 
+
+For a success response, the response body MAY be `{}`.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 202 Accepted | MUST be returned if a resouce creation is successfully initiated as a result of this request. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 409 Conflict | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+## Fetching a Resource Entity
+
+### Request
+
+#### Route
+
+`GET /v1/:resource_type/:resource_entity_id`
+
+`:resources_type` MUST be a valid Service Manager resource type.
+
+`:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
+
+#### Headers
+
+The following HTTP Headers are defined for the operations.
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
+| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example. 
+
+The response body MAY include information about the resource's `state`.
+
+In case of ongoing asynchronous update of the resource entity, this operation MUST return the old fields' values (the one known prior to the update as there is no guarantee if the update will be successful).
+
+## Listing All Resource Entities of a Resource Type
+
+Returns all resource entities of this resource type.
+
+### Request
+
+#### Route
+
+`GET /v1/:resource_type`
+
+`:resources_type` MUST be a valid Service Manager resource type.
+
+This endpoint supports [paging](#paging).
+
+This endpoint supports [filtering](#filtering).
+
+### Headers
+
+The following HTTP Headers are defined for the operations.
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+
+### Filtering Parameters
+
+All `list` endpoints MUST support filtering. 
+
+There re two types of filtering.
+1. Filtering based on labels.
+2. Filtering based on resource fields (these are fields that are part of the resource's JSON representation).
+
+Filtering can be controlled by the following query string parameters:
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
+
+    Example: `GET /v1/:resource_type?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all resource entities of the specified `resource_type` with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
+    
+    Example: `GET /v1/:resource_type?fieldQuery=field%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all resources of the specified type with value for `field` that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+
+### Paging Parameters
+
+All `list` endpoints MUST support paging. 
+
+There are two types of paging. 
+1. Paging by skipping items. The `skip_count` parameter defines how many items should be skipped. The order of the items is server specific, but MUST NOT change between calls.
+2. Paging by providing the ID of the last item of the previous page. The items MUST be ordered by their creation date. This paging method guarantees that no item is missed but it may be slower for big lists.
+
+Paging can be controlled by the following query string parameters: 
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| max_items | int | the maximum number of items to return in the response. The server MUST NOT exceed this maximum but  MAY return a smaller number of items than the specified value. The server SHOULD NOT return an error if `max_items` exceeds the internally supported page size. It SHOULD return a smaller number of items instead. The default is implementation specific.
+| skip_count | int | the number of potential results that the repository MUST skip/page over before returning any results. Defaults to 0. |
+| last_id | string | the ID of the last item of the previous page. An empty string indicates that the first page is requested. |
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK      | MUST be returned upon successful retrieval of the resource entities. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the values of the `max_items` parameter or the `skip_count` parameter is not a positive number or if both, the `skip_count` parameter and the `last_id` parameter are provided. MUST also be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`). Additional details are provided in the response body section of [paging](#paging).
+
+The response MAY not contain information about the resource entities' `states`.
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed).
+| num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
+| items* | array of objects | the list of items. This list MAY be empty. |
+
+\* Fields with an asterisk are REQUIRED.
+
+```json
+{  
+  "has_more_items": true,
+  "num_items": 42,
+  "items": [
+      ...
+  ]
+}
+```
+
+## Patching a Resource Entity
+
+### Request
+
+#### Route
+
+`PATCH /v1/:resource_type/:resource_entity_id`
+
+`:resources_type` MUST be a valid Service Manager resource type.
+
+`:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
+
+#### Headers 
+
+The following HTTP Headers are defined for the operations:
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+
+\* Headers with an asterisk are REQUIRED.
+
+#### Body
+
+The body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example.
+
+All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fields that are explicitly supplied a `null` value MUST be nulled out provided that they are not mandatory for the resource type.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+ 202 Accepted | MUST be returned if a resouce creation is successfully initiated as a result of this request. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+For a success response, the response body MAY be `{}`.
+
+**Note:** If the resource supports label, patching resource entities MUST also support patching the labels as specified in the [relevant section](#patching-labels).
+
+## Deleting a Resource Entity
+
+### Request
+
+#### Route
+
+`DELETE /v1/:resource_type/:resource_entity_id`
+
+`:resources_type` MUST be a valid Service Manager resource type.
+
+`:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
+
+#### Headers 
+
+The following HTTP Headers are defined for the operations:
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Authorization* | string | Provides a means for authentication and authorization |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+
+\* Headers with an asterisk are REQUIRED.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| force | boolean | Whether to force the deletion of the resource and all asociated resources from Service Manager. No call to the actual Service Broker is performed. |
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 202 Accepted | MUST be returned if a resouce deletion is performed as a result of this request. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are service bindings associated with the service instance and `force` is not `true`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+For a success response, the expected response body MUST be `{}`.
+
+## Platform Management
+
+The resource supports [labels](#labels-object).
+
+## Registering a Platform
+
+In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform means that a new service broker proxy for this particular platform has been registered with the Service Manager.
+
+Creation of a `platform` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
+
+### Route
+
+`POST /v1/platforms`
+
+### Request Body
 
 ```json
 {
     "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
     "name": "cf-eu-10",
     "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt"
+    "description": "Cloud Foundry on AWS in Frankfurt",
+    "labels": {
+      "label1": ["value1"]
+    }
 }
 ```
 
@@ -88,22 +367,23 @@ The following HTTP Headers are defined for this operation:
 | name* | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
+| labels | array of [labels](#label-object) | Additional data associated with the service broker. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are REQUIRED
 
-### Response
+## Fetching a Platform
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 201 Created | MUST be returned if the platform was registered as a result of this request. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a platform with the same `id` or `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+Fetching of a `platform` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
 
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+### Route 
 
-#### Body
+`GET /v1/platforms/:platform_id`
 
-The response body MUST be a valid JSON Object (`{}`).
+`:platform_id` MUST be the ID of a previously registered platform.
+
+### Response Body
+
+##### Platform Object
 
 ```json
 {
@@ -118,6 +398,13 @@ The response body MUST be a valid JSON Object (`{}`).
             "username": "admin",
             "password": "secret"
         }
+    },
+    "labels": {
+      "label1": ["value1"]
+    },
+    "state": {
+      "ready": "True",
+      "message": "Platform cf-eu-10 successfully provisioned"
     }
 }
 ```
@@ -131,97 +418,20 @@ The response body MUST be a valid JSON Object (`{}`).
 | credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST use to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
 | created_at | string | The time of the creation in ISO-8601 format |
 | updated_at | string | The time of the last update in ISO-8601 format |
-
-\* Fields with an asterisk are REQUIRED.
-
-## Fetching a Platform
-
-### Request
-
-#### Route
-
-`GET /v1/platforms/:platform_id`
-
-`:platform_id` MUST be the ID of a previously registered platform.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Platform Object
-
-```json
-{
-    "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
-    "name": "cf-eu-10",
-    "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
-    "created_at": "2016-06-08T16:41:22Z",
-    "updated_at": "2016-06-08T16:41:26Z"
-}
-```
-
-| Response field | Type | Description |
-| -------------- | ---- | ----------- |
-| id* | string | ID of the platform. |
-| name* | string | Platform name. |
-| type* | string | Type of the platform. |
-| description | string | Platform description. |
-| created_at | string | The time of the creation in ISO-8601 format |
-| updated_at | string | The time of the last update in ISO-8601 format |
+| labels* | array of [labels](#label-object) | Additional data associated with the service broker. MAY be an empty array. |
+| state | [state object](#state-object) | The state of the platform. |
 
 \* Fields with an asterisk are REQUIRED.
 
 ## Listing Platforms
 
-### Request
+Listing `platforms` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+### Route
 
 `GET /v1/platforms`
 
-This endpoint supports [paging](#paging).
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+### Response Body
 
 ```json
 {
@@ -234,7 +444,16 @@ The response body MUST be a valid JSON Object (`{}`).
       "type": "cloudfoundry",
       "description": "Cloud Foundry on AWS in Frankfurt",
       "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z"
+      "updated_at": "2016-06-08T16:41:26Z",
+      "credentials" : {
+        "basic": {
+            "username": "admin",
+            "password": "secret"
+        }
+      },
+      "labels": {
+        "label1": ["value1"]
+      }
     },
     {
       "id": "e031d646-62a5-4a50-9d8e-23165172e9e1",
@@ -242,43 +461,42 @@ The response body MUST be a valid JSON Object (`{}`).
       "type": "kubernetes",
       "description": "Kubernetes on GCP in us-west1",
       "created_at": "2016-06-08T17:41:22Z",
-      "updated_at": "2016-06-08T17:41:26Z"
+      "updated_at": "2016-06-08T17:41:26Z",
+      "credentials" : {
+        "basic": {
+            "username": "admin2",
+            "password": "secret2"
+        }
+      },
+      "labels": {
+
+      },
     }
   ]
 }
 ```
 
-| Response field | Type | Description |
-| -------------- | ---- | ----------- |
-| platforms* | array of [platforms](#platform-object) | List of registered platforms. |
-
-\* Fields with an asterisk are REQUIRED.
-
 ## Updating a Platform
 
-### Request
+Updating of a `platform` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
+
+### Route
 
 `PATCH /v1/platforms/:platform_id`
 
 `:platform_id` The ID of a previously registered platform.
 
-#### Headers
 
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+#### Request Body
 
 ```json
 {
     "name": "cf-eu-10",
     "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt"
+    "description": "Cloud Foundry on AWS in Frankfurt",
+    "labels": {
+
+    }
 }
 ```
 
@@ -290,101 +508,32 @@ The following HTTP Headers are defined for this operation:
 
 All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed.
 
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the platform was updated as a result of this request. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a platform with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-```json
-{
-    "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
-    "name": "cf-eu-10",
-    "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
-    "created_at": "2016-06-08T16:41:22Z",
-    "updated_at": "2016-06-08T16:41:26Z"
-}
-```
-
-| Response field | Type | Description |
-| -------------- | ---- | ----------- |
-| id* | string | ID of the platform. |
-| name* | string | Platform name. |
-| type* | string | Type of the platform. |
-| description | string | Platform description. |
-| created_at | string | The time of the creation in ISO-8601 format |
-| updated_at | string | The time of the last update in ISO-8601 format |
-
-\* Fields with an asterisk are REQUIRED.
-
 ## Deleting a Platform
 
-### Request
+Deletion of a `platform` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
+
+### Route
 
 `DELETE /v1/platforms/:platform_id`
 
 `:platform_id` MUST be the ID of a previously registered platform.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the platform was deleted as a result of this request. The expected response body is `{}`. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
-
 ## Service Broker Management
+
+The resource supports [labels](#labels-object).
 
 ## Registering a Service Broker
 
 Registering a broker in the Service Manager makes the services exposed by this service broker available to all Platforms registered in the Service Manager.
 Upon registration, Service Manager fetches and validate the catalog from the service broker.
 
-### Request
+Creation of a `service broker` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
 
-#### Route
+### Route
 
 `POST /v1/service_brokers`
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ----- | ---------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {
@@ -397,10 +546,10 @@ The following HTTP Headers are defined for this operation:
             "password": "secret"
         }
     },
-    "metadata": {
-
+    "labels": {
+      "label1": ["value1"]
     }
-}
+  }
 ```
 
 | Name | Type | Description |
@@ -409,51 +558,13 @@ The following HTTP Headers are defined for this operation:
 | description | string | A description of the service broker. |
 | broker_url* | string | MUST be a valid base URL for an application that implements the OSB API |
 | credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
-| metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
-
-\* Fields with an asterisk are REQUIRED.
-
-### Response
-
-| Status | Description |
-| ------ | ----------- |
-| 201 Created | MUST be returned if the service broker was registered as a result of this request. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-| 409 Conflict | MUST be returned if a service broker with the same `name` is already registered. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-```json
-{
-    "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
-    "name": "service-broker-name",
-    "description": "Service broker providing some valuable services",
-    "created_at": "2016-06-08T16:41:26Z",
-    "updated_at": "2016-06-08T16:41:26Z",
-    "broker_url": "https://service-broker-url",
-    "metadata": {
-
-    }
-}
-```
-
-| Response Field | Type | Description |
-| -------------- | ---- | ----------- |
-| id*            | string | ID of the service broker. MUST be unique across all service brokers registered with the Service Manager. If the same service broker is registered multiple times, each registration will get a different ID. |
-| name*          | string | Name of the service broker. |
-| description    | string | Description of the service broker. |
-| broker_url*    | string | URL of the service broker. |
-| created_at     | string | the time of creation in ISO-8601 format |
-| updated_at     | string | the time of the last update in ISO-8601 format |
-| metadata       | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
+| labels | array of [labels](#label-object) | Additional data associated with the service broker. |
 
 \* Fields with an asterisk are REQUIRED.
 
 ## Fetching a Service Broker
+
+Fetching of a `service broker` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
 
 ### Request
 
@@ -463,28 +574,7 @@ The response body MUST be a valid JSON Object (`{}`).
 
 `:broker_id` MUST be the ID of a previously registered service broker.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful retrieval of the service broker. The expected response body is below. |
-| 404 Not Found | MUST be returned if a service broker with the specified ID does not exist. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+#### Response Body
 
 #### Service Broker Object
 
@@ -496,8 +586,12 @@ The response body MUST be a valid JSON Object (`{}`).
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "broker_url": "https://service-broker-url",
-    "metadata": {
-
+    "labels": {
+      "label1": ["value1"]
+    },
+    "state": {
+      "ready": "True",
+      "message": "Service Broker service-broker-name successfully created"
     }
 }
 ```
@@ -510,41 +604,21 @@ The response body MUST be a valid JSON Object (`{}`).
 | broker_url*    | string | URL of the service broker. |
 | created_at     | string | the time of creation in ISO-8601 format |
 | updated_at     | string | the time of the last update in ISO-8601 format |
-| metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
+| labels* | array of [labels](#label-object) | Additional data associated with the service broker. MAY be an empty array. |
+| state | [state object](#state-object) | The state of the service broker. |
 
 \* Fields with an asterisk are REQUIRED.
 
 ## Listing Service Brokers
 
-### Request
+Listing `service brokers` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+
+### Route
 
 `GET /v1/service_brokers`
 
-This endpoint supports [paging](#paging).
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful retrieval of the service brokers. The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+### Response Body
 
 ```json
 {
@@ -558,8 +632,8 @@ The response body MUST be a valid JSON Object (`{}`).
       "created_at": "2016-06-08T16:41:26Z",
       "updated_at": "2016-06-08T16:41:26Z",
       "broker_url": "https://service-broker-url",
-      "metadata": {
-
+      "labels": {
+        "label1": ["value1"]
       }
     },
     {
@@ -568,43 +642,28 @@ The response body MUST be a valid JSON Object (`{}`).
       "description": "More services",
       "created_at": "2016-06-08T17:41:26Z",
       "updated_at": "2016-06-08T17:41:26Z",
-      "broker_url": "https://another-broker-url"
+      "broker_url": "https://another-broker-url",
+      "labels": {
+
+      }
     }
   ]
 }
 ```
 
-| Response Field | Type | Description |
-| -------------- | ---- | ----------- |
-| brokers* | array of [service brokers](#service-broker-object) | List of registered service brokers. |
-
-\* Fields with an asterisk are REQUIRED.
-
 ## Updating a Service Broker
-
-Updating a service broker allows to change its properties.
 
 Updating a service broker MUST trigger an update of the catalog of this service broker.
 
-### Request
+Updating of a `service broker` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
 
-#### Route
+### Route
 
 `PATCH /v1/service_brokers/:broker_id`
 
 `:broker_id` MUST be the ID of a previously registered service broker.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {
@@ -617,7 +676,7 @@ The following HTTP Headers are defined for this operation:
             "password": "secret"
         }
     },
-    "metadata": {
+    "labels": {
 
     }
 }
@@ -629,150 +688,35 @@ The following HTTP Headers are defined for this operation:
 | description | string | A description of the service broker. |
 | broker_url | string | MUST be a valid base URL for an application that implements the OSB API |
 | credentials | [credentials](#credentials-object) | If provided, MUST be a valid credentials object which will be used to authenticate against the service broker. |
-| metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
+| labels | array of [labels](#label-object) | Additional data associated with the service broker. |
 
 All fields are OPTIONAL. Fields that are not provided MUST NOT be changed.
 
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the requested changes have been applied. The expected response body is `{}` |
-| 400 Bad Request | MUST be returned if the request is malformed or a forbidden modification attempt is made. |
-| 409 Conflict | MUST be returned if a service broker with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-```json
-{
-    "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
-    "name": "service-broker-name",
-    "description": "Service broker providing some valuable services",
-    "created_at": "2016-06-08T16:41:26Z",
-    "updated_at": "2016-06-08T16:41:26Z",
-    "broker_url": "https://service-broker-url",
-    "metadata": {
-
-    }
-}
-```
-
-| Response Field | Type | Description |
-| -------------- | ---- | ----------- |
-| id*            | string | ID of the service broker. |
-| name*          | string | Name of the service broker. |
-| description    | string | Description of the service broker. |
-| broker_url*    | string | URL of the service broker. |
-| created_at     | string | the time of creation in ISO-8601 format |
-| updated_at     | string | the time of the last update in ISO-8601 format |
-| metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
-
-\* Fields with an asterisk are REQUIRED.
-
 ## Deleting a Service Broker
-
-When the Service Manager receives a delete request, it MUST delete any resources it created during registration of this service broker.
 
 Deletion of a service broker for which there are Service Instances created MUST fail. This behavior can be overridden by specifying the `force` query parameter which will remove the service broker regardless of whether there are Service Instances created by it.
 
+Deletion of a `service broker` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
-### Request
-
-#### Route
+### Route
 
 `DELETE /v1/service_brokers/:broker_id`
 
 `:broker_id` MUST be the ID of a previously registered service broker.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| force | boolean | Whether to force the deletion of the service broker, ignoring existing Service Instances associated with it. |
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful deletion of the service broker. The expected response body is `{}`. |
-| 400 Bad Request | Returned if the request is malformed or there are service instances associated with the service broker and `force` parameters is not `true`. |
-| 404 Not Found | MUST be returned if a service broker with the specified ID does not exist. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
-
-## Information
-
-The Service Manager exposes publicly available information that can be used when accessing its APIs.
-
-### Request
-
-#### Route
-
-`GET /v1/info`
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned upon successful processing of this request. The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-```json
-{
-    "token_issuer_url": "https://example.com"
-}
-```
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| token_issuer_url* | string | URL of the token issuer. The token issuer MUST have a public endpoint `/.well-known/openid-configuration` as specified by the [OpenID Provider Configuration](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) |
-
-\* Fields with an asterisk are REQUIRED.
-
 ## Service Instance Management
 
-### Provisioning a Service Instance
+The resource supports [labels](#labels-object).
 
-### Request
+## Provisioning a Service Instance
 
-#### Route
+Creation of a `service instance` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
+
+### Route
 
 `POST /v1/service_instances`
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {  
@@ -790,21 +734,19 @@ The following HTTP Headers are defined for this operation:
 }
 ```
 
-### Response
+## Fetching a Service Instance
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 201 Created     | MUST be returned if the resource was created. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict    | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+Fetching of a `service instance` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
 
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+### Route
 
-#### Body
+`GET /v1/service_instances/:service_instance_id`
 
-The response body MUST be a valid JSON Object (`{}`).
+`:service_instance_id` MUST be the ID of a previously provisioned service instance.
 
-##### Service Instance Object
+### Response Body
+
+#### Service Instance Object
 
 ```json
 {  
@@ -822,99 +764,19 @@ The response body MUST be a valid JSON Object (`{}`).
   },
   "state": {  
     "ready": "False",
-    "reasons": [
-      "LastOperationSucceeded"
-    ],
-    "message": "Service Binding is currently being created",
+    "message": "Orphan mitigation required: Service Broker request timeout: PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114",
     "conditions": [  
       {  
-        "type": "LastOperationSucceeded",
-        "status": "False",
-        "reason": "InProgess",
-        "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 is still in progress",
-        "name": "Create"
+        "type": "LastOperation",
+        "status": "Failed",
+        "message": "Service Broker request timeout: PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114",
+        "name": "Update",
+        "reason": "OperationTimeout"
       },
       {  
-        "type": "OrphanMitigationRequired",
-        "status": "False",
-        "reason": "ServiceBrokerResponseSuccess",
-        "message": "Service Broker returned 202 Accepted for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
-      }
-    ]
-  },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
-}
-```
-
-### Fetching a Service Instance
-
-### Request
-
-#### Route
-
-`GET /v1/service_instances/:service_instance_id`
-
-`:service_instance_id` MUST be the ID of a previously provisioned service instance.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| --- | --- | --- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Instance Object
-
-```json
-{  
-  "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
-  "name": "my-service-instance",
-  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-  "parameters": {  
-    "parameter1": "value1",
-    "parameter2": "value2"
-  },
-  "labels": {  
-    "context_id": [
-      "bvsded31-c303-123a-aab9-8crar19e1218"
-    ]
-  },
-  "state": {  
-    "ready": "True",
-    "reasons": [  
-
-    ],
-    "message": "Service Binding is ready for use",
-    "conditions": [  
-      {  
-        "type": "LastOperationSucceeded",
-        "status": "True",
-        "reason": "Completed",
-        "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
-        "name": "Create"
-      },
-      {  
-        "type": "OrphanMitigationRequired",
-        "status": "True",
+        "type": "OrphanMitigation",
+        "status": "Required",
         "reason": "ServiceBrokerTimeout",
-        "message": "Service Broker request timeout: PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
       }
     ]
   },
@@ -923,48 +785,16 @@ The response body MUST be a valid JSON Object (`{}`).
 }
 ```
 
-###  Listing Service Instances
+##  Listing Service Instances
 
-### Request
+Listing `service instances` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+
+### Route
 
 `GET /v1/service_instances`
 
-This endpoint supports [paging](#paging).
-
-#### Parameters
-
-| Query-String Field | Type | Description |
-| ------------------ | ---- | ----------- |
-| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
-
-    Example: `GET /v1/service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances that have a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
-    
-    Example: `GET /v1/service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances for the plan with ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+### Response Body
 
 ```json
 {  
@@ -984,28 +814,6 @@ The response body MUST be a valid JSON Object (`{}`).
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
-      "state": {  
-        "ready": "True",
-        "reasons": [  
-
-        ],
-        "message": "Service Binding is currently being deleted",
-        "conditions": [  
-          {  
-            "type": "LastOperationSucceeded",
-            "status": "True",
-            "reason": "Completed",
-            "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
-            "name": "Create"
-          },
-          {  
-            "type": "OrphanMitigationRequired",
-            "status": "False",
-            "reason": "ServiceBrokerResponseSuccess",
-            "message": "Service Broker returned 202 Accepted for PUT https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
-          }
-        ]
-      },
       "created_at": "2016-06-08T16:41:22Z",
       "updated_at": "2016-06-08T16:41:26Z"
     }
@@ -1013,32 +821,25 @@ The response body MUST be a valid JSON Object (`{}`).
 }
 ```
 
-### Updating a Service Instance
+## Updating a Service Instance
 
-### Request
+Updating of a `service instance` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
+
+### Route
 
 `PATCH /v1/service_instances/:service_instance_id`
 
 `:service_instance_id` The ID of a previously provisioned service instance.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {  
   "name": "new-instance-name",
-  "parameters": {  
-    "parameter1": "value1"
-  },
+  "parameters": [  
+    { "op": "add", "key": "parameter1", "value": "value1" }
+  ],
+  "service_plan_id": "acsded31-c303-123a-aab9-8crar19e1218",
   "labels": [
     { "op": "add", "key": "label1", "values": ["test1", "test2"] },
     { "op": "add_value", "key": "label2", "values": ["test3"] },
@@ -1049,129 +850,31 @@ The following HTTP Headers are defined for this operation:
 }
 ```
 
-All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` will override the old values.
+**Note:** Patching parameters works the same way as patching labels.
 
-### Response
+## Deleting a Service Instance
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce update is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+Deletion of a `service instance` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Instance Object
-
-```json
-{  
-  "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
-  "name": "new-instance-name",
-  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-  "parameters": {  
-    "parameter1": "value1"
-  },
-  "labels": {  
-    "label1": [
-      "value1"
-    ]
-  },
-  "state": {  
-    "ready": "False",
-    "reasons": [  
-      "LastOperationSucceeded"
-    ],
-    "message": "Service Instance is currently being updated",
-    "conditions": [  
-      {  
-        "type": "LastOperationSucceeded",
-        "status": "False",
-        "reason": "InProcess",
-        "message": "Updating deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
-        "name": "Update"
-      },
-      {  
-        "type": "OrphanMitigationRequired",
-        "status": "False",
-        "reason": "ServiceBrokerResponseSuccess",
-        "message": "Service Broker returned 202 Accepted for PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114"
-      }
-    ]
-  },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2018-06-08T16:41:26Z"
-}
-```
-
-\* Fields with an asterisk are REQUIRED.
-
-### Deleting a Service Instance
-
-### Request
+## Route
 
 `DELETE /v1/service_instances/:service_instance_id`
 
 `:service_instance_id` MUST be the ID of a previously provisioned service instance.
 
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| force | boolean | Whether to force the deletion of the resource and all asociated resources from Service Manager. No call to the actual Service Broker is performed. |
-
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| --- | --- | --- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce deletion is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted. The expected response body is `{}`. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are service bindings associated with the service instance and `force` is not `true`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
-
 ## Service Binding Management
 
-### Creating a Service Binding
+The resource supports [labels](#labels-object).
 
-### Request
+## Creating a Service Binding
 
-#### Route
+Creation of a `service binding` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
+
+### Route
 
 `POST /v1/service_bindings`
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {  
@@ -1191,99 +894,29 @@ The following HTTP Headers are defined for this operation:
 
 \* Fields with an asterisk are REQUIRED.
 
-### Response
+## Fetching a Service Binding
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 201 Created | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a resource with the same `id` or `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+Fetching of a `service binding` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
 
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Binding Object
-
-```json
-{  
-  "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
-  "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-  "credentials": {  
-    "creds-key-63": "creds-val-63"
-  },
-  "parameters": {  
-    "parameter1": "value1",
-    "parameter2": "value2"
-  },
-  "labels": {  
-    "context_id": [
-      "bvsded31-c303-123a-aab9-8crar19e1218"
-    ]
-  },
-  "state": {  
-    "ready": "False",
-    "reasons": [  
-      "LastOperationSucceeded"
-    ],
-    "message": "Service Binding is currently being deleted",
-    "conditions": [  
-      {  
-        "type": "LastOperationSucceeded",
-        "status": "False",
-        "reason": "InProgess",
-        "message": "Delete deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 is still in progress",
-        "name": "Delete"
-      }
-    ]
-  },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
-}
-```
-
-### Fetching a Service Binding
-
-### Request
+### Route
 
 `GET /v1/service_bindings/:service_binding_id`
 
 `:service_binding_id` MUST be the ID of a previously created service binding.
 
-#### Headers
+### Response Body
 
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | -----| ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Binding Object
+#### Service Binding Object
 
 ```json
 {  
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
   "name": "my-service-binding",
   "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-  "credentials": {  
-    "creds-key-63": "creds-val-63"
+  "binding": {
+    "credentials": {  
+      "creds-key-63": "creds-val-63"
+    }
   },
   "parameters": {  
     "parameter1": "value1",
@@ -1295,16 +928,12 @@ The response body MUST be a valid JSON Object (`{}`).
     ]
   },
   "state": {  
-    "ready": "False",
-    "reasons": [  
-      "OrphanMitigationRequired"
-    ],
+    "ready": "True",
     "message": "Service Binding is currently being deleted",
     "conditions": [  
       {  
-        "type": "LastOperationSucceeded",
-        "status": "True",
-        "reason": "Completed",
+        "type": "LastOperation",
+        "status": "Success",
         "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
         "name": "Create"
       }
@@ -1315,50 +944,15 @@ The response body MUST be a valid JSON Object (`{}`).
 }
 ```
 
-### Listing Service Bindings
+## Listing Service Bindings
 
-### Request
+Listing `service bindings` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+### Route
 
 `GET /v1/service_bindings`
 
-This endpoint supports [paging](#paging).
-
-#### Parameters
-
-The request provides these query string parameters as useful hints for brokers.
-
-| Query-String Field | Type | Description |
-| ------------------ | ---- | ----------- |
-| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
-
-    Example: `GET /v1/service_bindings?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings that have a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
-    
-    Example: `GET /v1/service_bindings?fieldQuery=service_instance_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service bindings for the service instance with ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+###  Response Body
 
 ```json
 {  
@@ -1369,8 +963,10 @@ The response body MUST be a valid JSON Object (`{}`).
       "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
       "name": "my-service-binding",
       "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-      "credentials": {  
-        "creds-key-63": "creds-val-63"
+      "binding": {
+        "credentials": {  
+          "creds-key-63": "creds-val-63"
+        }
       },
       "parameters": {  
         "parameter1": "value1",
@@ -1381,22 +977,6 @@ The response body MUST be a valid JSON Object (`{}`).
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
-      "state": {  
-        "ready": "True",
-        "reasons": [  
-          "LastOperationSucceeded"
-        ],
-        "message": "Service Binding is currently being deleted",
-        "conditions": [  
-          {  
-            "type": "LastOperationSucceeded",
-            "status": "True",
-            "reason": "Completed",
-            "message": "Update deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
-            "name": "Update"
-          }
-        ]
-      },
       "created_at": "2016-06-08T16:41:22Z",
       "updated_at": "2016-06-08T16:41:26Z"
     }
@@ -1404,32 +984,21 @@ The response body MUST be a valid JSON Object (`{}`).
 }
 ```
 
-### Updating a Service Binding
+## Updating a Service Binding
 
-### Request
+Updating of a `service binding` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
+
+### Route
 
 `PATCH /v1/service_bindings/:service_binding_id`
 
 `:service_binding_id` The ID of a previously created service binding.
 
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-#### Body
+### Request Body
 
 ```json
 {  
   "name": "new-binding-name",
-  "parameters": {  
-    "parameter1": "newval"
-  },
   "labels": [
     { "op": "add", "key": "label1", "values": ["test1", "test2"] },
     { "op": "add_value", "key": "label2", "values": ["test3"] },
@@ -1440,151 +1009,39 @@ The following HTTP Headers are defined for this operation:
 }
 ```
 
-All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. If provided, `parameters` will override the old values.
+## Deleting a Service Binding
 
-### Response
+Deletion of a `service binding` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce update is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Binding Object
-
-```json
-{  
-  "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
-  "name": "new-binding-name",
-  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-  "credentials": {  
-    "creds-key-63": "creds-val-63"
-  },
-  "parameters": {  
-    "parameter1": "newval"
-  },
-  "labels": {  
-    "context_id": [
-      "bvsded31-c303-123a-aab9-8crar19e1218"
-    ],
-    "label1": [
-      "value1"
-    ]
-  },
-  "state": {  
-    "ready": "False",
-    "reasons": [  
-      "LastOperationSucceeded"
-    ],
-    "message": "Service Binding is currently being deleted",
-    "conditions": [  
-      {  
-        "type": "LastOperationSucceeded",
-        "status": "False",
-        "reason": "InProcess",
-        "message": "Updating deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
-        "name": "Update"
-      }
-    ]
-  },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2018-06-08T16:41:26Z"
-}
-```
-
-\* Fields with an asterisk are REQUIRED.
-
-
-### Deleting a Service Binding
-
-### Request
+### Route
 
 `DELETE /v1/service_bindings/:service_binding_id`
 
 `:service_binding_id` MUST be the ID of a previously created service binding.
 
-#### Parameters
+## Service Offering Management
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| force | boolean | Whether to force the deletion of the resource and all asociated resources from Service Manager. No call to the actual Service Broker is performed. |
+The resource supports [labels](#labels-object).
 
+## Fetching a Service Offering
 
-#### Headers
+Fetching of a `service offering` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
 
-The following HTTP Headers are defined for this operation:
+### Route
 
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
+`GET /v1/service_offerings/:service_offering_id`
 
-\* Headers with an asterisk are REQUIRED.
+`:service_offering_id` MUST be the ID of a previously created service offering.
 
-### Response
+###  Response Body
 
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce deletion is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted. The expected response body is `{}`. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are service bindings associated with the service instance and `force` is not `true`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-For a success response, the expected response body is `{}`.
-
-## Service Management
-
-### Fetching a Service
-
-### Request
-
-#### Route
-
-`GET /v1/services/:service_id`
-
-`:service__id` MUST be the ID of a previously created service.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Object
+#### Service Offering Object
 
 ```json
 {  
   "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
-  "name": "my-service",
-  "description": "service description",
+  "name": "my-service-offering",
+  "description": "service offering description",
   "displayName": "postgres",
   "longDescription": "local postgres",
   "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
@@ -1593,49 +1050,22 @@ The response body MUST be a valid JSON Object (`{}`).
   "instances_retrievable": false,
   "bindings_retrievable": false,
   "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
+  "updated_at": "2016-06-08T16:41:26Z",
+  "labels": {
+
+  }
 }
 ```
 
-### Listing Services
+## Listing Service Offerings
 
-### Request
+Listing `service offerings` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+### Route
 
-`GET /v1/services`
+`GET /v1/service_offerings`
 
-This endpoint supports [paging](#paging).
-
-#### Parameters
-
-| Query-String Field | Type | Description |
-| ------------------ | ---- | ----------- |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
-    
-    Example: `GET /v1/services?fieldQuery=service_broker_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service  for the servie broker with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+### Response Body
 
 ```json
 {  
@@ -1644,8 +1074,8 @@ The response body MUST be a valid JSON Object (`{}`).
   "items":[  
     {  
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
-      "name": "my-service",
-      "description": "service description",
+      "name": "my-service-offering",
+      "description": "service offering description",
       "displayName": "display-name",
       "longDescription": "long-name",
       "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
@@ -1654,7 +1084,10 @@ The response body MUST be a valid JSON Object (`{}`).
       "instances_retrievable": false,
       "bindings_retrievable": false,
       "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z"
+      "updated_at": "2016-06-08T16:41:26Z",
+      "labels": {
+
+      }
     }
   ]
 }
@@ -1662,40 +1095,21 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ## Service Plan Management
 
-### Fetching a Service Plan
+The resource supports [labels](#labels-object).
 
-### Request
+## Fetching a Service Plan
 
-#### Route
+Fetching of a `service plan` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
+
+### Route
 
 `GET /v1/plans/:plan_id`
 
 `:plan_id` MUST be the ID of a previously created plan.
 
-#### Headers
+### Response Body
 
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
-
-##### Service Plan Object
+#### Service Plan Object
 
 ```json
 {  
@@ -1725,51 +1139,24 @@ The response body MUST be a valid JSON Object (`{}`).
     }
   },
   "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
+  "updated_at": "2016-06-08T16:41:26Z",
+  "labels": {
+
+  }
 }
 ```
 
 \* Fields with an asterisk are REQUIRED.
 
-### Listing Service Plans
+## Listing Service Plans
 
-### Request
+Listing `service plans` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
-#### Route
+### Route
 
 `GET /v1/plans`
 
-This endpoint supports [paging](#paging).
-
-#### Parameters
-
-| Query-String Field | Type | Description |
-| ------------------ | ---- | ----------- |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
-    
-    Example: `GET /v1/plans?fieldQuery=service_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service plans for the service with GUID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if a resouce creation is performed as a result of this request. This would imply that the Service Broker returned 200 OK or 202 Accepted.The expected response body is below. |
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`).
+### Response Body
 
 ```json
 {  
@@ -1803,7 +1190,10 @@ The response body MUST be a valid JSON Object (`{}`).
         }
       },
       "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z"
+      "updated_at": "2016-06-08T16:41:26Z",
+      "labels": {
+
+      }
     }
   ]
 }
@@ -1811,12 +1201,44 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ## Service Visibilities Management
 
-There are currently ongoing dicussions as to how platform and service visilibities should be handled in  SM.
+There are currently ongoing dicussions as to how platform and service visilibities should be handled in SM.
 TODO: Add content here.
+
+## Information Management
+
+The Service Manager exposes publicly available information that can be used when accessing its APIs.
+
+### Request
+
+#### Route
+
+`GET /v1/info`
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned upon successful processing of this request. The expected response body is below. |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+```json
+{
+    "token_issuer_url": "https://example.com"
+}
+```
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| token_issuer_url* | string | URL of the token issuer. The token issuer MUST have a public endpoint `/.well-known/openid-configuration` as specified by the [OpenID Provider Configuration](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) |
+
+\* Fields with an asterisk are REQUIRED.
 
 ## OSB Management
 
-The OSB Management API is an implementation of v2.13 of the [OSB API specification](https://github.com/openservicebrokerapi/servicebroker). It enables the Service Manager to act as a central service broker and be registered as one in the  platforms that are associated with it (meaning the platforms that are registered in the Service Manager). The Service Manager also takes care of delegating the OSB calls to the registered brokers (meaning brokers that are registered in the Service Manager) that should process the request. As such, the Service Manager acts as a platform for the actual (registered) brokers.
+The OSB Management API is an implementation of the [OSB API specification](https://github.com/openservicebrokerapi/servicebroker). It enables the Service Manager to act as a central service broker and be registered as one in the  platforms that are associated with it (meaning the platforms that are registered in the Service Manager). The Service Manager also takes care of delegating the OSB calls to the registered brokers (meaning brokers that are registered in the Service Manager) that should process the request. As such, the Service Manager acts as a platform for the actual (registered) brokers.
 
 ### Request 
 
@@ -1831,6 +1253,8 @@ In its role of a platform for the registered brokers, the Service Manager MAY de
 ## Credentials Object
 
 This specification does not limit how the Credentials Object should look like as different authentication mechanisms can be used. Depending on the used authentication mechanism, additional fields holding the actual credentials MAY be included.
+
+**Note:** The following structure of the credentials object does not apply for Service Binding credentials. Service Binding credentials are provided by the Service Broker and MAY be free form as long as they comply with the OSB specification.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
@@ -1850,107 +1274,86 @@ _Exactly_ one of the properties `basic` or `token` MUST be provided.
 
 ## State Object
 
-Resources that support asynchronous creation, deletion and updates MUST contain a `state` object.
+All resources that support mutation operations (creation, deletion and update) MUST contain a `state` object. After performing a mutation request, the response MUST include a `Location` header from where information about the resource's `state` can be obtained. This MAY or MAY NOT be the `Retrieve` (`GET`) API for the resource entity that is being mutated.
+
+The `state` reflects the real state in which the resource currently is. It includes information regarding whether the resource is currently usable or not (`ready` or not) and it contains `conditions` that provide further details if the resource is not ready (is not usable).
+
+The `state` is of particular interest when the mutation operations are asynchronous. But even synchronously mutatable resources should provide `state` for consistency reasons. This `state` of synchronously mutated resources would often include no conditions.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| ready* | boolean | Indicates whether a resource is ready for use or not |
-| conditions* | array of [conditions](#conditions-object) | Describe the state of the resource and indicate what actions should be taken in order for the resource to become ready |
-| reasons* | array of strings | A subset of the types of the `conditions` that are relevant to why the `ready` field is what it is |
+| ready* | boolean | Indicates whether a resource is ready for use or not. This value is calculated by the Service Manager based on the conditions' statuses using a resource specific aggregation policy for the conditions that are defined for this resource |
+| conditions* | array of [conditions](#conditions-object) | Describe the state of the resource and indicate what actions should be taken in order for the resource to become ready. May be an empty array |
 | message* | string | Human-readable summary for the reasoning behind the `ready` being what it is |
 
 ### Conditions Object
 
-The `conditions` describe the current conditions in which the resource is. 
-Each resource MAY add specific conditions and should also handle those conditions accordingly in case they sum up to an undesired `state` (in most cases this would be a `ready: false` state).
+The `conditions` describe the current condition in which the resource is. 
+Each resource MAY add resource specific conditions and should also handle those conditions accordingly in case they sum up to an undesired `state` (in most cases this would be a `ready:false` state).
 Each `condition` MAY include additional fields apart from those specified below in order to provide meaningful information.
 
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| type* | string | The type of the condition |
-| status* | boolean | Used to determine whether any actions should be taken in regards of this condition. For example, a condition of type operation with status false would imply that the operation is still in progress |
-| message* | string | Human-readable details that describe the condition |
-| reason* | string | A single word containing the reason for the condition status |
+| type* | string | The type of the condition. Each resource defines a set of condition types that are relevant for it. |
+| status* | string | The status of the condition. Each condition defines its own status values and gives them semantics. Used to determine whether any actions should be taken in regards of this condition. For example, a condition of type `last_operation` with status `in_progress` would imply that the operation is still in running. If the status is `success` it would imply that the operation has successfully finished and if it is `failed` it would imply that the `last_operation` failed |
+| message | string | Human-readable details that describe the condition |
 
-In order to maintain the state up to date, each resource that contains a `state` MUST also expose APIs for retrieving and updating it. 
+The `state` MUST be maintained up-to-date and reflect the real state of the resource. When a process or a component takes actions due to the `state` not matching what is actually desired, the process or component MUST also take care of updating the respective  `conditions` that it has performed actions upon. When any conditions are updated the `ready` field MUST be recalculated and updated by the Service Manager.
 
-### Fetchhing the state of a resource
+Each Service Manager resource MUST define the conditions that are relevant for it. It MUST also define an aggregation policy that sums up the `conditions` and decides whether the resource is `ready` or not. Based on this policy every time a resource's `condition` is changed, the `ready` field should be recalculated and updated. The fact that each resource defines it's own `conditions` and an aggregation policy based on those `conditions` is an implementation detail but it is worth mentioning it here to better describe the idea behind the `state`.
 
-### Request
-
-#### Route
-
-`GET /v1/:resource/:resource_id/state`
-
-`:resource` is a resource that has a state (for example service_instances)
-
-`:resource_id` MUST be the ID of a previously created resource.
-
-#### Headers
-
-The following HTTP Headers are defined for this operation:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-
-Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
-
-#### Body
-
-The response body MUST be a valid JSON Object (`{}`). It contains the [state object](#state-object) for this resource.
-
-Example state:
+Example Resource Entity with a State Object:
 
 ```json
-{  
-  "ready": "True",
-  "reasons": [  
-    "LastOperationSucceeded", ...
-  ],
-  "message": "Resource is currently being deleted",
-  "conditions": [  
-    {  
-      "type": "LastOperationSucceeded",
-      "status": "True",
-      "reason": "Completed",
-      "message": "Successfully updated resource r-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
-      "name": "Update"
-    },
-    ...
-  ]
-}
+{
+  "id": "0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
+  ...
+  "state": {  
+    "ready": "False",
+    "message": "Service Binding is currently being created",
+    "conditions": [  
+      {  
+        "type": "last_operation",
+        "status": "in_progress",
+        "message": "Creating deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
+        "name": "Create"
+      }
+    ]
+  }
+}  
 ```
+
+The example state above represents the state of a resource called `service_binding` with an `id` equal to `0941-12c4b6f2-335a-44a3-b971-424ec78c7353`. The `state` implies that the service binding is not ready (it is not usable) due to the fact that the last operation (namely Create, hence the `name` field) performed on this entity is currently still running (the `status` of the `last_operation` `condition` is `in_progress`).
 
 ## Labels Object
 
-A label is a key-value pair that can be attached to a resource. Service Manager resources MAY have any number of labels.
+A label is a key-value pair that can be attached to a resource. Service Manager resources MAY have any number of labels represented by the `labels` field.
 
 This allows querying (filtering) on the `List` API of the resource based on multiple labels. The Service Manager MAY
 attach additional labels to the resources and MAY restrict updates and deletes for some of the labels.
 
-Example:
+The `labels` MUST be returned as part of the `List` and `Fetch` APIs.
+
+Example of a Resource Entity that has labels:
 
 ```json
-{  
-  "label1Key": [
-    "label1Value"
-  ],
-  "label2Key": [
-    "label2Value1"
-  ]
-}
+{
+  "id": "0941-12c4b6f2-335a-44a3-b971-424ec78c7353",
+  ...
+  "labels": {  
+      "label1Key": [
+        "label1Value"
+      ],
+      "label2Key": [
+        "label2Value1"
+      ]
+    }
+}  
 ```
+### Naming Labels
+
+TODO: add rules for labels naming
 
 ### Patching Labels
 
@@ -1959,17 +1362,26 @@ The PATCH APIs of the resources that support labels MUST support the following `
 | Operation | Description |
 | --------- | ----------- |
 | add | Adds a new label with the name in `label`. The `value` MUST be a string or an array of strings. If the label already exists, the operation fails. |
-| add_value | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
-| replace | Replaces a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
-| replace_value | Replaces a value in a label. The `value` MUST be a string. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
-| remove_label | Removes a label. If the label does not exist, the operation fails. |
+| add_values | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
+| replace | Replaces a all values of a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
+| remove | Removes a label. If the label does not exist, the operation fails. |
 | remove_values | Removes a value from a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails |
 
 If one operations fails, none of the changes will be applied.
 
-Example: PATCH v1/:resource/:resource_id/ with body:
+#### Example
 
-```
+##### Route
+
+`PATCH /v1/:resources_type/:resource_entity_id`
+
+`:resources_type` MUST be a valid Service Manager resource type.
+
+`:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
+
+##### Request Body
+
+```json
 ...
 "labels": [
     { "op": "add", "key": "label1", "values": ["test1", "test2"] },
@@ -1981,54 +1393,24 @@ Example: PATCH v1/:resource/:resource_id/ with body:
 ...  
 ```
 
-
-## Paging
-
-All list endpoints MUST support paging. 
-
-There are two types of paging. 
-1. Paging by skipping items. The `skip_count` parameter defines how many items should be skipped. The order of the items is server specific, but MUST NOT change between calls.
-2. Paging by providing the ID of the last item of the previous page. The items MUST be ordered by their creation date. This paging method guarantees that no item is missed but it may be slower for big lists.
-
-Paging can be controlled by the following parameters. 
-
-
-### Parameters
-
-| Query-String Field | Type | Description |
-| ------------------ | ---- | ----------- |
-| max_items | int | the maximum number of items to return in the response. The server MUST NOT exceed this maximum but  MAY return a smaller number of items than the specified value. The server SHOULD NOT return an error if `max_items` exceeds the internally supported page size. It SHOULD return a smaller number of items instead. The default is implementation specific.
-| skip_count | int | the number of potential results that the repository MUST skip/page over before returning any results. Defaults to 0. |
-| last_id | string | the ID of the last item of the previous page. An empty string indicates that the first page is requested. |
-
-
-### Response
-
-| Status Code | Description |
-| ----------- | ----------- |
-| 400 Bad Request | MUST be returned if the values of the `max_items` parameter or the `skip_count` parameter is not a positive number or if both, the `skip_count` parameter and the `last_id` parameter are provided. |
-
-
-#### Body
-
-| Response Field | Type | Description |
-| -------------- | ---- | ----------- |
-| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed).
-| num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
-| items* | array of objects | the list of items. This list MAY be empty. |
-
-\* Fields with an asterisk are REQUIRED.
+#### Response Body
 
 ```json
-{  
-  "has_more_items": true,
-  "num_items": 42,
-  "items": [
-      ...
-  ]
-}
+...
+"labels": [
+  {
+    "oldLabel": [
+      "oldLabelValue1", "oldLabelValue2"
+    ]
+  },
+  {
+    "label1": [
+      "test1"
+    ]
+  }
+]
+...  
 ```
-
 
 ## Errors
 
