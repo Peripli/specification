@@ -3,51 +3,51 @@
 
 ## Table of Contents
 
-  - [Overview](#overview)
-  - [Asynchronous Operations](#asynchronous-operations)
-  - [General Resource Management](#general-resource-management)
-    - [Creating a Resource Entity](#creating-a-resource-entity)
-    - [Fetching a Resource Entity](#fetching-a-resource-entity)
-    - [Listing all Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
-    - [Patching a Resource Entity](#patching-a-resource-entity)
-    - [Deleting a Resource Entity](#deleting-a-resource-entity)
-  - [Platform Management](#platform-management)
-    - [Registering a Platform](#registering-a-platform)
-    - [Fetchhing a Platform](#fetching-a-platform)
-    - [Listing Platforms](#listing-platforms)
-    - [Updating a Platform](#updating-a-platform)
-    - [Deleting a Platform](#deleting-a-platform)
-  - [Service Broker Management](#service-broker-management)
-    - [Registering a Service Broker](#registering-a-service-broker)
-    - [Fetching a Service Broker](#fetchhing-a-service-broker)
-    - [Listing Service Brokers](#listing-service-brokers)
-    - [Updating a Service Broker](#updating-a-service-broker)
-    - [Deleting a Service Broker](#deleting-a-service-broker)
-  - [Service Instance Management](#service-instance-management)
-    - [Provisioning a Service Instance](#provisioning-a-service-instance)
-    - [Fetching a Service Instance](#fetchhing-a-service-instance)
-    - [Listing Service Instances](#listing-service-instances)
-    - [Updating a Service Instance](#updating-a-service-instance)
-    - [Deleting a Service Instance](#deleting-a-service-instance)
-  - [Service Binding Management](#service-binding-management)
-    - [Creating a Service Binding](#creating-a-service-binding)
-    - [Fetching a Service Binding](#fetching-a-service-binding)
-    - [Listing Service Binding](#listing-service-bindings)
-    - [Updating a Service Binding](#updating-a-service-binding)
-    - [Deleting a Service Binding](#deleting-a-service-binding)
-  - [Service Offering Management](#service-offering-management)
-    - [Fetching a Service](#fetchhing-a-service-offering)
-    - [Listing Services](#listing-service-offerings)
-  - [Service Plan Management](#service-plan-management)
-    - [Fetching a Service Plan](#fetchhing-a-service-plan)
-    - [Listing Service Plans](#listing-service-plans)
-  - [Information Management](#information-management)
-  - [OSB Management](#osb-management)
-  - [Credentials Object](#credentials-object)
-  - [State Object](#state-object)
-  - [Labels Object](#labels-object)
-  - [Errors](#errors)
-  - [Content Type](#content-type)
+- [Overview](#overview)
+- [Asynchronous Operations](#asynchronous-operations)
+- [General Resource Management](#general-resource-management)
+  - [Creating a Resource Entity](#creating-a-resource-entity)
+  - [Fetching a Resource Entity](#fetching-a-resource-entity)
+  - [Listing all Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
+  - [Patching a Resource Entity](#patching-a-resource-entity)
+  - [Deleting a Resource Entity](#deleting-a-resource-entity)
+- [Platform Management](#platform-management)
+  - [Registering a Platform](#registering-a-platform)
+  - [Fetchhing a Platform](#fetching-a-platform)
+  - [Listing Platforms](#listing-platforms)
+  - [Updating a Platform](#updating-a-platform)
+  - [Deleting a Platform](#deleting-a-platform)
+- [Service Broker Management](#service-broker-management)
+  - [Registering a Service Broker](#registering-a-service-broker)
+  - [Fetching a Service Broker](#fetchhing-a-service-broker)
+  - [Listing Service Brokers](#listing-service-brokers)
+  - [Updating a Service Broker](#updating-a-service-broker)
+  - [Deleting a Service Broker](#deleting-a-service-broker)
+- [Service Instance Management](#service-instance-management)
+  - [Provisioning a Service Instance](#provisioning-a-service-instance)
+  - [Fetching a Service Instance](#fetchhing-a-service-instance)
+  - [Listing Service Instances](#listing-service-instances)
+  - [Updating a Service Instance](#updating-a-service-instance)
+  - [Deleting a Service Instance](#deleting-a-service-instance)
+- [Service Binding Management](#service-binding-management)
+  - [Creating a Service Binding](#creating-a-service-binding)
+  - [Fetching a Service Binding](#fetching-a-service-binding)
+  - [Listing Service Binding](#listing-service-bindings)
+  - [Updating a Service Binding](#updating-a-service-binding)
+  - [Deleting a Service Binding](#deleting-a-service-binding)
+- [Service Offering Management](#service-offering-management)
+  - [Fetching a Service](#fetchhing-a-service-offering)
+  - [Listing Services](#listing-service-offerings)
+- [Service Plan Management](#service-plan-management)
+  - [Fetching a Service Plan](#fetchhing-a-service-plan)
+  - [Listing Service Plans](#listing-service-plans)
+- [Information Management](#information-management)
+- [OSB Management](#osb-management)
+- [Credentials Object](#credentials-object)
+- [State Object](#state-object)
+- [Labels Object](#labels-object)
+- [Errors](#errors)
+- [Content Type](#content-type)
 
 ## Overview
 
@@ -58,7 +58,7 @@ A CLI-friendly string is all lowercase, with no spaces. Keep it short -- imagine
 
 ## Asynchronous Operations
 
-The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the `state` of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state. 
+The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the `state` of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state.
 
 ### Concurrent Mutating Requests
 
@@ -78,7 +78,7 @@ The following section generalizes how Service Manager resources are managed. A `
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-#### Headers 
+#### Headers
 
 The following HTTP Headers are defined for the operations:
 
@@ -91,7 +91,7 @@ The following HTTP Headers are defined for the operations:
 
 #### Body
 
-The body must be a valid JSON Object (`{}`). 
+The body must be a valid JSON Object (`{}`).
 
 For a success response, the response body MAY be `{}`.
 
@@ -141,7 +141,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example. 
+The response body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example.
 
 The response body MAY include information about the resource's `state`.
 
@@ -174,9 +174,10 @@ The following HTTP Headers are defined for the operations.
 
 ### Filtering Parameters
 
-All `list` endpoints MUST support filtering. 
+All `list` endpoints MUST support filtering.
 
 There re two types of filtering.
+
 1. Filtering based on labels.
 2. Filtering based on resource fields (these are fields that are part of the resource's JSON representation).
 
@@ -193,9 +194,10 @@ Filtering can be controlled by the following query string parameters:
 
 ### Paging Parameters
 
-All `list` endpoints MUST support paging. 
+All `list` endpoints MUST support paging.
 
-There are two types of paging. 
+There are two types of paging.
+
 1. Paging by skipping items. The `skip_count` parameter defines how many items should be skipped. The order of the items is server specific, but MUST NOT change between calls.
 2. Paging by providing the ID of the last item of the previous page. The items MUST be ordered by their creation date. This paging method guarantees that no item is missed but it may be slower for big lists.
 
@@ -383,7 +385,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 
 ### Response Body
 
-##### Platform Object
+#### Platform Object
 
 ```json
 {
@@ -785,7 +787,7 @@ Fetching of a `service instance` resource entity MUST comply with [fetching a re
 }
 ```
 
-##  Listing Service Instances
+## Listing Service Instances
 
 Listing `service instances` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
 
@@ -1292,7 +1294,6 @@ The `conditions` describe the current condition in which the resource is.
 Each resource MAY add resource specific conditions and should also handle those conditions accordingly in case they sum up to an undesired `state` (in most cases this would be a `ready:false` state).
 Each `condition` MAY include additional fields apart from those specified below in order to provide meaningful information.
 
-
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | type* | string | The type of the condition. Each resource defines a set of condition types that are relevant for it. |
@@ -1351,9 +1352,10 @@ Example of a Resource Entity that has labels:
     }
 }  
 ```
+
 ### Naming Labels
 
-TODO: add rules for labels naming
+TODO: Add rules for labels naming
 
 ### Patching Labels
 
@@ -1428,6 +1430,7 @@ include additional fields within the response.
 | description | string | A user-facing error message explaining why the request failed. If present, MUST be a non-empty string. |
 
 Example:
+
 ```json
 {
   "error": "InvalidCredentials",
