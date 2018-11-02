@@ -14,7 +14,7 @@
 - [Resource types](#resource-types)
 - [Platform Management](#platform-management)
   - [Registering a Platform](#registering-a-platform)
-  - [Fetchhing a Platform](#fetching-a-platform)
+  - [Fetching a Platform](#fetching-a-platform)
   - [Listing Platforms](#listing-platforms)
   - [Updating a Platform](#updating-a-platform)
   - [Deleting a Platform](#deleting-a-platform)
@@ -64,7 +64,7 @@ The Service Manager APIs for mutating (creating, deleting and updating) resource
 
 ### Concurrent Mutating Requests
 
-Service Manager does not support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and id `:resource_id` is currently being created/updated/deleted and this operation is in progress, then no other asynchronous mutating operation can be executed on the resource of type `:resource_type` and id `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
+Service Manager does not support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and ID `:resource_id` is currently being created/updated/deleted and this operation is in progress, then no other asynchronous mutating operation can be executed on the resource of type `:resource_type` and ID `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
 
 ## General Resource Management
 
@@ -96,13 +96,13 @@ The body MUST be a valid JSON Object (`{}`).
 
 For a success response, the response body MAY be `{}`.
 
-Some APIs may allow passing in the resource entity `id` (that is the id to be used to uniquely identify the resource entity) for backward compatibility reasons. If an `id` is not passed as part of the request body, the Service Manager takes care of generating one. The `id` field MUST be returned as part of the response of a call to the Location URL.
+Some APIs may allow passing in the resource entity `id` (that is the ID to be used to uniquely identify the resource entity) for backward compatibility reasons. If an `id` is not passed as part of the request body, the Service Manager takes care of generating one. The `id` field MUST be returned as part of the response of a call to the Location URL.
 
 ### Response
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 202 Accepted | MUST be returned if a resouce creation is successfully initiated as a result of this request. |
+| 202 Accepted | MUST be returned if a resource creation is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 409 Conflict | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
@@ -146,7 +146,7 @@ The following HTTP Headers are defined for the operations.
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | MUST be returned if the request execution has been successful. The expected response body is below. |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+| 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -158,7 +158,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example.
+The response body MUST be a valid JSON Object (`{}`). Each resource API in this document should include a relevant example.
 
 The response body MAY include information about the resource's `state`.
 
@@ -192,7 +192,7 @@ The following HTTP Headers are defined for the operations.
 
 All `list` endpoints MUST support filtering.
 
-There re two types of filtering.
+There are two types of filtering.
 
 1. Filtering based on labels.
 2. Filtering based on resource fields (these are fields that are part of the resource's JSON representation).
@@ -206,7 +206,7 @@ Filtering can be controlled by the following query string parameters:
 
     Example: `GET /v1/:service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
 
-    Example: `GET /v1/:service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan id that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/:service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 ### Paging Parameters
 
@@ -282,7 +282,7 @@ The following HTTP Headers are defined for the operations:
 
 #### Body
 
-The body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example.
+The body MUST be a valid JSON Object (`{}`). Each resource API in this document should include a relevant example.
 
 All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fields that are explicitly supplied a `null` value MUST be nulled out provided that they are not mandatory for the resource type.
 
@@ -290,9 +290,9 @@ All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fiel
 
 | Status Code | Description |
 | ----------- | ----------- |
- 202 Accepted | MUST be returned if a resouce updating is successfully initiated as a result of this request. |
+| 202 Accepted | MUST be returned if a resource updating is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
@@ -345,9 +345,9 @@ The following HTTP Headers are defined for the operations:
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 202 Accepted | MUST be returned if a resouce deletion is performed as a result of this request. |
+| 202 Accepted | MUST be returned if a resource deletion is performed as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are resource entities associated with the resource entity that is being deleted and `cascade` and `force` are `false`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
-| 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+| 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
@@ -374,37 +374,37 @@ Service Manager currently defines the following resource types the APIs for whic
 
 The `platforms` API is described [here](#platform-management).
 
-Definion of the semantics behind the resource can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Brokers
 
 The `service brokers` API is described [here](#service-broker-management).
 
-Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Instances
 
 The `service instances` API is described [here](#service-instance-management).
 
-Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Bindings
 
 The `service bindings` API is described [here](#service-binding-management).
 
-Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Offerings
 
 The `service offerings` API is described [here](#service-offering-management).
 
-Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Plans
 
 The `service plans` API is described [here](#service-plan-management).
 
-Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
 ### Service Visibilities
 
@@ -442,7 +442,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 
 | Request field | Type | Description |
 | ------------- | ---- | ----------- |
-| id  | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. |
+| id  | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. If not provided, the Service Manager generates an ID. |
 | name* | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
@@ -495,8 +495,8 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | type* | string | Type of the platform. |
 | description | string | Platform description. |
 | credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST use to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
-| created_at | string | The time of the creation in ISO-8601 format |
-| updated_at | string | The time of the last update in ISO-8601 format |
+| created_at | string | The time of the creation in ISO-8601 format. |
+| updated_at | string | The time of the last update in ISO-8601 format. |
 | labels* | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | state | [state object](#state-object) | The state of the platform. |
 
@@ -681,8 +681,8 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 | name*          | string | Name of the service broker. |
 | description    | string | Description of the service broker. |
 | broker_url*    | string | URL of the service broker. |
-| created_at     | string | the time of creation in ISO-8601 format |
-| updated_at     | string | the time of the last update in ISO-8601 format |
+| created_at     | string | The time of creation in ISO-8601 format. |
+| updated_at     | string | The time of the last update in ISO-8601 format. |
 | labels* | array of [labels](#label-object) | Additional data associated with the service broker. MAY be an empty array. |
 | state | [state object](#state-object) | The state of the service broker. |
 
@@ -1289,7 +1289,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 
 ## Service Visibilities Management
 
-There are currently ongoing dicussions as to how platform and service visilibities should be handled in SM.
+There are currently ongoing discussions as to how platform and service visilibities should be handled in SM.
 TODO: Add content here.
 
 ## Information Management
@@ -1332,7 +1332,7 @@ The OSB Management API is an implementation of the [OSB API specification](https
 
 The OSB Management API prefixes the routes specified in the OSB spec with `/v1/osb/:broker_id`.
 
-`:broker_id` is the id of the broker that the OSB call is targeting. The Service Manager MUST forward the call to this broker. The `broker_id` MUST be a globally unique non-empty string.
+`:broker_id` is the ID of the broker that the OSB call is targeting. The Service Manager MUST forward the call to this broker. The `broker_id` MUST be a globally unique non-empty string.
 
 When a request is send to the OSB Management API, after forwarding the call to the actual broker but before returning the response, the Service Manager MAY alter the body of the response. For example, in the case of `/v1/osb/:broker_id/v2/catalog` request, the Service Manager MAY, amongst other things, add additional plans (reference plan) to the catalog.
 
@@ -1358,7 +1358,7 @@ _Exactly_ one of the properties `basic` or `token` MUST be provided.
 | username* | string | username |
 | password* | string | password |
 
-\* Fields with an asterisk are RENQUIRED.
+\* Fields with an asterisk are REQUIRED.
 
 ## State Object
 
