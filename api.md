@@ -1481,25 +1481,6 @@ If one operations fails, none of the changes will be applied.
 ...  
 ```
 
-#### Response Body
-
-```json
-...
-"labels": [
-  {
-    "oldLabel": [
-      "oldLabelValue1", "oldLabelValue2"
-    ]
-  },
-  {
-    "label1": [
-      "test1"
-    ]
-  }
-]
-...  
-```
-
 ## Errors
 
 When a request to the Service Manager fails, it MUST return an
