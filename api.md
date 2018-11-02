@@ -11,6 +11,7 @@
   - [Listing all Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
   - [Patching a Resource Entity](#patching-a-resource-entity)
   - [Deleting a Resource Entity](#deleting-a-resource-entity)
+- [Resource types](#resource-types)
 - [Platform Management](#platform-management)
   - [Registering a Platform](#registering-a-platform)
   - [Fetchhing a Platform](#fetching-a-platform)
@@ -59,7 +60,7 @@ A CLI-friendly string is all lowercase, with no spaces. Keep it short -- imagine
 
 ## Asynchronous Operations
 
-The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the `state` of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state.
+The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the [state](#state-object) of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state.
 
 ### Concurrent Mutating Requests
 
@@ -86,13 +87,12 @@ The following HTTP Headers are defined for the operations:
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 \* Headers with an asterisk are REQUIRED.
 
 #### Body
 
-The body must be a valid JSON Object (`{}`).
+The body MUST be a valid JSON Object (`{}`).
 
 For a success response, the response body MAY be `{}`.
 
@@ -105,8 +105,15 @@ Some APIs may allow passing in the resource entity `id` (that is the id to be us
 | 202 Accepted | MUST be returned if a resouce creation is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 409 Conflict | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Headers
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 #### Body
 
@@ -133,7 +140,6 @@ The following HTTP Headers are defined for the operations.
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
-| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 ### Response
 
@@ -143,6 +149,12 @@ The following HTTP Headers are defined for the operations.
 | 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Headers
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 #### Body
 
@@ -175,7 +187,6 @@ The following HTTP Headers are defined for the operations.
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
-| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 ### Filtering Parameters
 
@@ -193,9 +204,9 @@ Filtering can be controlled by the following query string parameters:
 | labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
-    Example: `GET /v1/:resource_type?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all resource entities of the specified `resource_type` with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
-    
-    Example: `GET /v1/:resource_type?fieldQuery=field%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all resources of the specified type with value for `field` that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+    Example: `GET /v1/:service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
+
+    Example: `GET /v1/:service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan id that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 ### Paging Parameters
 
@@ -231,7 +242,7 @@ The response MAY not contain information about the resource entities' `states`.
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
-| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed).
+| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed or the max_items exceeds the internally supported page size).
 | num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
 | items* | array of objects | the list of items. This list MAY be empty. |
 
@@ -266,7 +277,6 @@ The following HTTP Headers are defined for the operations:
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 \* Headers with an asterisk are REQUIRED.
 
@@ -280,12 +290,19 @@ All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fiel
 
 | Status Code | Description |
 | ----------- | ----------- |
- 202 Accepted | MUST be returned if a resouce creation is successfully initiated as a result of this request. |
+ 202 Accepted | MUST be returned if a resouce updating is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Headers
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 #### Body
 
@@ -314,7 +331,6 @@ The following HTTP Headers are defined for the operations:
 | Header | Type | Description |
 | ------ | ---- | ----------- |
 | Authorization* | string | Provides a means for authentication and authorization |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 \* Headers with an asterisk are REQUIRED.
 
@@ -323,16 +339,24 @@ The following HTTP Headers are defined for the operations:
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | force | boolean | Whether to force the deletion of the resource and all asociated resources from Service Manager. No call to the actual Service Broker is performed. |
+| cascade | boolean | Some resources cannot be deleted if there are certain other resources that semantically link to them (for example a service instance can only be deleted if all the service bindings to it are deleted first). This parameter allows cascade deletion of resource entities that are asociated with a particular resource entity before deleting the actual resource entity. Defaults to `false`. |
 
 ### Response
 
 | Status Code | Description |
 | ----------- | ----------- |
 | 202 Accepted | MUST be returned if a resouce deletion is performed as a result of this request. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are service bindings associated with the service instance and `force` is not `true`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are resource entities associated with the resource entity that is being deleted and `cascade` and `force` are `false`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 404 Not Found | MUST be returned if the requested resource is missing. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+| 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Headers
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
 
 #### Body
 
@@ -342,13 +366,59 @@ For a success response, the expected response body MUST be `{}`.
 
 **Note:** A response to a call to the Location URL will always return at least the `state` of the resource entity until the resource entity is gone (fully deleted) - then a `404 Not Found` MUST be returned.
 
+## Resource Types
+
+Service Manager currently defines the following resource types the APIs for which MUST comply with the [general resource management section](#general-resource-management).
+
+### Platforms
+
+The `platforms` API is described [here](#platform-management).
+
+Definion of the semantics behind the resource can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Brokers
+
+The `service brokers` API is described [here](#service-broker-management).
+
+Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Instances
+
+The `service instances` API is described [here](#service-instance-management).
+
+Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Bindings
+
+The `service bindings` API is described [here](#service-binding-management).
+
+Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Offerings
+
+The `service offerings` API is described [here](#service-offering-management).
+
+Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Plans
+
+The `service plans` API is described [here](#service-plan-management).
+
+Definion of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
+
+### Service Visibilities
+
+The `service visibilities` resource represents enforced visibility policies for service offerings and plans. This allows the Service Manager to specify where service plans are visible (in which platforms, CF orgs, etc).
+
+The `service visibilities` API is described [here](#service-visibility-management).
+
 ## Platform Management
 
 The resource supports [labels](#labels-object).
 
 ## Registering a Platform
 
-In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform means that a new service broker proxy for this particular platform has been registered with the Service Manager.
+In order for a platform to be usable with the Service Manager, the Service Manager needs to know about the platforms existence. Essentially, registering a platform would allow the Service Manager to manage the service brokers and service visibilities in this platform.
 
 Creation of a `platform` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
 
@@ -376,7 +446,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 | name* | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
-| labels | array of [labels](#label-object) | Additional data associated with the service broker. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
 
 \* Fields with an asterisk are REQUIRED
 
@@ -427,7 +497,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST use to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
 | created_at | string | The time of the creation in ISO-8601 format |
 | updated_at | string | The time of the last update in ISO-8601 format |
-| labels* | array of [labels](#label-object) | Additional data associated with the service broker. MAY be an empty array. |
+| labels* | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | state | [state object](#state-object) | The state of the platform. |
 
 \* Fields with an asterisk are REQUIRED.
@@ -867,6 +937,8 @@ Updating of a `service instance` resource entity MUST comply with [patching a re
 
 Deletion of a `service instance` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
+Deletion of a service instance that has service bindings MUST fail unless `cascade` or `force` query parameter is `true`.
+
 ## Route
 
 `DELETE /v1/service_instances/:service_instance_id`
@@ -940,7 +1012,7 @@ Fetching of a `service binding` resource entity MUST comply with [fetching a res
   },
   "state": {  
     "ready": "True",
-    "message": "Service Binding is currently being deleted",
+    "message": "Service Binding is created",
     "conditions": [  
       {  
         "type": "LastOperation",
@@ -1032,6 +1104,8 @@ Deletion of a `service binding` resource entity MUST comply with [deleting a res
 
 ## Service Offering Management
 
+As per the OSB API terminology a service offering represents the advertisement of a service that a service broker supports. Service Manager MUST expose a management API of the service offerings offered by the registered service brokers.
+
 The resource supports [labels](#labels-object).
 
 ## Fetching a Service Offering
@@ -1082,7 +1156,7 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 {  
   "has_more_items": true,
   "num_items": 523,
-  "items":[  
+  "items":[
     {  
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-offering",
@@ -1099,12 +1173,15 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
       "labels": {
 
       }
-    }
+    },
+    ...
   ]
 }
 ```
 
 ## Service Plan Management
+
+As per the OSB API terminology, a service plan is representation of the costs and benefits for a given variant of the service, potentially as a tier that a service broker offers. Service Manager MUST expose a management API of the service plans offered by services of the registered service brokers.
 
 The resource supports [labels](#labels-object).
 
@@ -1114,9 +1191,9 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 
 ### Route
 
-`GET /v1/plans/:plan_id`
+`GET /v1/service_plans/:service_plan_id`
 
-`:plan_id` MUST be the ID of a previously created plan.
+`:service_plan_id` MUST be the ID of a previously created plan.
 
 ### Response Body
 
@@ -1124,7 +1201,7 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 
 ```json
 {  
-  "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+  "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "plan-name",
   "free": false,
   "description": "description",
@@ -1165,7 +1242,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 
 ### Route
 
-`GET /v1/plans`
+`GET /v1/service_plans`
 
 ### Response Body
 
@@ -1175,7 +1252,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
   "num_items": 732,
   "items": [  
     {  
-      "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+      "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "plan-name",
       "free": false,
       "description": "description",
