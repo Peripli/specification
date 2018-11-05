@@ -42,6 +42,7 @@
 - [Service Plan Management](#service-plan-management)
   - [Fetching a Service Plan](#fetching-a-service-plan)
   - [Listing Service Plans](#listing-service-plans)
+- [Service Visibility Management](#service-visibility-management)
 - [Information Management](#information-management)
 - [OSB Management](#osb-management)
 - [Credentials Object](#credentials-object)
@@ -160,7 +161,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 The response body MUST be a valid JSON Object (`{}`). Each resouce API in this document should include a relevant example.
 
-The response body MAY include information about the resource's `state`.
+The response body MUST include information about the resource's `state`.
 
 In case of ongoing asynchronous update of the resource entity, this operation MUST return the old fields' values (the one known prior to the update as there is no guarantee if the update will be successful).
 
@@ -238,7 +239,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 The response body MUST be a valid JSON Object (`{}`). Additional details are provided in the response body section of [paging](#paging).
 
-The response MAY not contain information about the resource entities' `states`.
+The response MUST contain information about the resource entities' `states`.
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
@@ -253,7 +254,18 @@ The response MAY not contain information about the resource entities' `states`.
   "has_more_items": true,
   "num_items": 42,
   "items": [
+    {
+      "id": "a62b83e8-1604-427d-b079-200ae9247b60",
+      "state": {
+        "ready": "False",
+        "message": "a-meaningful message",
+        "causes": [
+          ...
+        ]
+      }
       ...
+    },
+    ...
   ]
 }
 ```
@@ -430,13 +442,13 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 
 ```json
 {
-    "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
-    "name": "cf-eu-10",
-    "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
-    "labels": {
-      "label1": ["value1"]
-    }
+  "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+  "name": "cf-eu-10",
+  "type": "cloudfoundry",
+  "description": "Cloud Foundry on AWS in Frankfurt",
+  "labels": {
+    "label1": ["value1"]
+  }
 }
 ```
 
@@ -532,6 +544,10 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       },
       "labels": {
         "label1": ["value1"]
+      },
+      "state": {
+        "ready": "True",
+        "message": "Platform cf-eu-10 successfully provisioned"
       }
     },
     {
@@ -550,6 +566,10 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "labels": {
 
       },
+      "state": {
+        "ready": "True",
+        "message": "Platform k8s-us-05 successfully provisioned"
+      }
     }
   ]
 }
@@ -713,6 +733,10 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "broker_url": "https://service-broker-url",
       "labels": {
         "label1": ["value1"]
+      },
+      "state": {
+        "ready": "True",
+        "message": "Service Broker service-broker-name successfully created"
       }
     },
     {
@@ -724,6 +748,10 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "broker_url": "https://another-broker-url",
       "labels": {
 
+      },
+      "state": {
+        "ready": "True",
+        "message": "Service Broker another-broker successfully created"
       }
     }
   ]
@@ -846,7 +874,7 @@ Fetching of a `service instance` resource entity MUST comply with [fetching a re
   "state": {  
     "ready": "False",
     "message": "Orphan mitigation required: Service Broker request timeout: PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114",
-    "conditions": [  
+    "causes": [  
       {  
         "type": "LastOperation",
         "status": "Failed",
@@ -893,6 +921,24 @@ Listing `service instances` MUST comply with [listing all resource entities of a
       "labels": {  
         "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
+        ]
+      },
+      "state": {  
+        "ready": "False",
+        "message": "Orphan mitigation required: Service Broker request timeout: PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114",
+        "causes": [  
+          {  
+            "type": "LastOperation",
+            "status": "Failed",
+            "message": "Service Broker request timeout: PATCH https://pg-broker.com/v2/service_instances/123-52c4b6f2-335a-44a3-c971-424ec78c7114",
+            "name": "Update",
+            "reason": "OperationTimeout"
+          },
+          {  
+            "type": "OrphanMitigation",
+            "status": "Required",
+            "reason": "ServiceBrokerTimeout",
+          }
         ]
       },
       "created_at": "2016-06-08T16:41:22Z",
@@ -1013,7 +1059,7 @@ Fetching of a `service binding` resource entity MUST comply with [fetching a res
   "state": {  
     "ready": "True",
     "message": "Service Binding is created",
-    "conditions": [  
+    "causes": [  
       {  
         "type": "LastOperation",
         "status": "Success",
@@ -1058,6 +1104,18 @@ Listing `service bindings` MUST comply with [listing all resource entities of a 
       "labels": {  
         "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
+        ]
+      },
+      "state": {  
+        "ready": "True",
+        "message": "Service Binding is created",
+        "causes": [  
+          {  
+            "type": "LastOperation",
+            "status": "Success",
+            "message": "Create deployment pg-0941-12c4b6f2-335a-44a3-b971-424ec78c7353 succeeded at 2018-09-26T07:43:36.000Z",
+            "name": "Create"
+          }
         ]
       },
       "created_at": "2016-06-08T16:41:22Z",
@@ -1287,7 +1345,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 }
 ```
 
-## Service Visibilities Management
+## Service Visibility Management
 
 There are currently ongoing dicussions as to how platform and service visilibities should be handled in SM.
 TODO: Add content here.
@@ -1364,31 +1422,31 @@ _Exactly_ one of the properties `basic` or `token` MUST be provided.
 
 All resources that support mutation operations (creation, deletion and update) MUST contain a `state` object. After performing a mutation request, the response MUST include a `Location` header from where information about the resource's `state` can be obtained. This MAY or MAY NOT be the `Retrieve` (`GET`) API for the resource entity that is being mutated.
 
-The `state` reflects the real state in which the resource currently is. It includes information regarding whether the resource is currently usable or not (`ready` or not) and it contains `conditions` that provide further details if the resource is not ready (is not usable).
+The `state` reflects the real state in which the resource currently is. It includes information regarding whether the resource is currently usable or not (`ready` or not) and it contains `causes` that provide further details if the resource is not ready (is not usable).
 
-The `state` is of particular interest when the mutation operations are asynchronous. But even synchronously mutatable resources should provide `state` for consistency reasons. This `state` of synchronously mutated resources would often include no conditions.
+The `state` is of particular interest when the mutation operations are asynchronous. But even synchronously mutatable resources should provide `state` for consistency reasons. This `state` of synchronously mutated resources would often include no causes.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| ready* | boolean | Indicates whether a resource is ready for use or not. This value is calculated by the Service Manager based on the conditions' statuses using a resource specific aggregation policy for the conditions that are defined for this resource |
-| conditions* | array of [conditions](#conditions-object) | Describe the state of the resource and indicate what actions should be taken in order for the resource to become ready. May be an empty array |
+| ready* | boolean | Indicates whether a resource is ready for use or not. This value is calculated by the Service Manager based on the causes' statuses using a resource specific aggregation policy for the causes that are defined for this resource |
+| causes* | array of [causes](#causes-object) | Describe the state of the resource and indicate what actions should be taken in order for the resource to become ready. May be an empty array |
 | message* | string | Human-readable summary for the reasoning behind the `ready` being what it is |
 
-### Conditions Object
+### Causes Object
 
-The `conditions` describe the current condition in which the resource is. 
-Each resource MAY add resource specific conditions and should also handle those conditions accordingly in case they sum up to an undesired `state` (in most cases this would be a `ready:false` state).
-Each `condition` MAY include additional fields apart from those specified below in order to provide meaningful information.
+The `causes` describe the current causes for the resource not being `ready`.
+Each resource MAY add resource specific causes and should also handle those causes accordingly in case they sum up to an undesired `state` (in most cases this would be a `ready:false` state).
+Each `cause` MAY include additional fields apart from those specified below in order to provide meaningful information.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| type* | string | The type of the condition. Each resource defines a set of condition types that are relevant for it. |
-| status* | string | The status of the condition. Each condition defines its own status values and gives them semantics. Used to determine whether any actions should be taken in regards of this condition. For example, a condition of type `last_operation` with status `in_progress` would imply that the operation is still in running. If the status is `success` it would imply that the operation has successfully finished and if it is `failed` it would imply that the `last_operation` failed |
-| message | string | Human-readable details that describe the condition |
+| type* | string | The type of the cause. Each resource defines a set of cause types that are relevant for it. |
+| status* | string | The status of the cause. Each cause defines its own status values and gives them semantics. Used to determine whether any actions should be taken in regards of this cause. For example, a cause of type `last_operation` with status `in_progress` would imply that the operation is still in running. If the status is `success` it would imply that the operation has successfully finished and if it is `failed` it would imply that the `last_operation` failed |
+| message | string | Human-readable details that describe the cause |
 
-The `state` MUST be maintained up-to-date and reflect the real state of the resource. When a process or a component takes actions due to the `state` not matching what is actually desired, the process or component MUST also take care of updating the respective  `conditions` that it has performed actions upon. When any conditions are updated the `ready` field MUST be recalculated and updated by the Service Manager.
+The `state` MUST be maintained up-to-date and reflect the real state of the resource. When a process or a component takes actions due to the `state` not matching what is actually desired, the process or component MUST also take care of updating the respective  `causes` that it has performed actions upon. When any causes are updated the `ready` field MUST be recalculated and updated by the Service Manager.
 
-Each Service Manager resource MUST define the conditions that are relevant for it. It MUST also define an aggregation policy that sums up the `conditions` and decides whether the resource is `ready` or not. Based on this policy every time a resource's `condition` is changed, the `ready` field should be recalculated and updated. The fact that each resource defines it's own `conditions` and an aggregation policy based on those `conditions` is an implementation detail but it is worth mentioning it here to better describe the idea behind the `state`.
+Each Service Manager resource MUST define the causes that are relevant for it. It MUST also define an aggregation policy that sums up the `causes` and decides whether the resource is `ready` or not. Based on this policy every time a resource's `cause` is changed, the `ready` field should be recalculated and updated. The fact that each resource defines it's own `causes` and an aggregation policy based on those `causes` is an implementation detail but it is worth mentioning it here to better describe the idea behind the `state`.
 
 Example Resource Entity with a State Object:
 
@@ -1399,7 +1457,7 @@ Example Resource Entity with a State Object:
   "state": {  
     "ready": "False",
     "message": "Service Binding is currently being created",
-    "conditions": [  
+    "causes": [  
       {  
         "type": "last_operation",
         "status": "in_progress",
@@ -1411,7 +1469,7 @@ Example Resource Entity with a State Object:
 }  
 ```
 
-The example state above represents the state of a resource called `service_binding` with an `id` equal to `0941-12c4b6f2-335a-44a3-b971-424ec78c7353`. The `state` implies that the service binding is not ready (it is not usable) due to the fact that the last operation (namely Create, hence the `name` field) performed on this entity is currently still running (the `status` of the `last_operation` `condition` is `in_progress`).
+The example state above represents the state of a resource called `service_binding` with an `id` equal to `0941-12c4b6f2-335a-44a3-b971-424ec78c7353`. The `state` implies that the service binding is not ready (it is not usable) due to the fact that the last operation (namely Create, hence the `name` field) performed on this entity is currently still running (the `status` of the `last_operation` `cause` is `in_progress`).
 
 ## Labels Object
 
@@ -1449,11 +1507,11 @@ The PATCH APIs of the resources that support labels MUST support the following `
 
 | Operation | Description |
 | --------- | ----------- |
-| add | Adds a new label with the name in `label`. The `value` MUST be a string or an array of strings. If the label already exists, the operation fails. |
-| add_values | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
-| replace | Replaces a all values of a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails. |
-| remove | Removes a label. If the label does not exist, the operation fails. |
-| remove_values | Removes a value from a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails |
+| add | Adds a new label with the name in `label`. The `value` MUST be a string or an array of strings. If the label already exists, the operation fails as a 409 Conflict. |
+| add_values | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails as 404 Not Found. If the value already exists, the operation fails as 409 Conflict. |
+| replace | Replaces a all values of a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails as 404 Not Found. |
+| remove | Removes a label. If the label does not exist, the operation fails with 404 Not Found. |
+| remove_values | Removes a value from a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails with 404 Not Found. |
 
 If one operations fails, none of the changes will be applied.
 
@@ -1493,7 +1551,7 @@ include additional fields within the response.
 
 | Response Field | Type | Description |
 | --- | --- | --- |
-| error | string | A single word that uniquely identifies the error condition. If present, MUST be a non-empty string with no whitespace. It MAY be used to identify the error programmatically on the client side. |
+| error | string | A single word that uniquely identifies the error cause. If present, MUST be a non-empty string with no whitespace. It MAY be used to identify the error programmatically on the client side. |
 | description | string | A user-facing error message explaining why the request failed. If present, MUST be a non-empty string. |
 
 Example:
@@ -1511,4 +1569,4 @@ All requests and responses defined in this specification with accompanying bodie
 
 ## Mitigating Orphans
 
-Service Manager MUST also handle properly the orphan mitigation process as described in the [orphan's section](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#orphans) of the OSB spec. How this is done is an implementation detail. One possible way would be for the `state` of service instances to include an `OrphanMitigation` `condition` that contains a details whether orphan mitigation is required or not. When orphan mitigation is required, the relevant process that takes actions based on the `state` MUST take the necessary steps (keep trying to delete the resource entity) to ensure orphans are mitigated correctly.
+Service Manager MUST also handle properly the orphan mitigation process as described in the [orphan's section](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#orphans) of the OSB spec. How this is done is an implementation detail. One possible way would be for the `state` of service instances to include an `OrphanMitigation` `cause` that contains a details whether orphan mitigation is required or not. When orphan mitigation is required, the relevant process that takes actions based on the `state` MUST take the necessary steps (keep trying to delete the resource entity) to ensure orphans are mitigated correctly.
