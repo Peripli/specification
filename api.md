@@ -54,10 +54,30 @@
 
 ## Overview
 
-The Service Manager API defines an HTTP interface that allows the management of platforms, brokers, services, plans, service instances and service bindings from a central place. In general, the Service Manager API can be split into two groups - a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in SM (SM as a platform) and an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in SM (SM as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
+The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into two groups - a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform) and an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
 One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
-A CLI-friendly string is all lowercase, with no spaces. Keep it short -- imagine a user having to type it as an argument for a longer command.
+
+
+## Terminology and Definitions
+
+This document inherits the terminology from the Service Manager specification and [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/) specification.
+
+Additionally, the follow terms and concepts are use:
+
+* *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 100 characters and SHOULD only consist of alphanumeric characters, periods, and hyphens. Using a GUID is RECOMMENDED.
+* *CLI-friendly name*: A CLI-friendly name is a short, lowercase string that SHOULD only use alphanumeric characters, periods, hyphens, and no white spaces. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
+* *Description*: A description is a human readable string, which SHOULD NOT exceed 255 characters. If a description is longer than 255 characters, the Service Manager MAY silently truncate it.
+
+
+## Authentication an Authorization
+
+Unless there is some out of band communication and agreement between a Service Manager client and the Service Manager, a client MUST authenticate with the Service Manager using OAuth 2.0 (the `Authorization:` header) on every request. 
+
+The Service Manager MUST return a `401 Unauthorized` response if the authentication fails.
+
+The Service Manager MUST return a `403 Forbidden` response if the client is not authorized to perform the requested operation.
+
 
 ## Asynchronous Operations
 
@@ -81,21 +101,11 @@ The following section generalizes how Service Manager resources are managed. A `
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-#### Headers
-
-The following HTTP Headers are defined for the operations:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
 #### Body
 
-The body MUST be a valid JSON Object (`{}`).
+The body MUST be a valid JSON Object.
 
-For a success response, the response body MAY be `{}`.
+For a success response, the response body MAY `{}`.
 
 Some APIs may allow passing in the resource entity `id` (that is the ID to be used to uniquely identify the resource entity) for backward compatibility reasons. If an `id` is not passed as part of the request body, the Service Manager takes care of generating one. The `id` field MUST be returned as part of the response of a call to the Location URL.
 
@@ -105,7 +115,7 @@ Some APIs may allow passing in the resource entity `id` (that is the ID to be us
 | ----------- | ----------- |
 | 202 Accepted | MUST be returned if a resource creation is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 409 Conflict | MUST be returned if a resource with the same `name` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+| 409 Conflict | MUST be returned if a resource with the same `name` or `id` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
@@ -118,7 +128,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`).
+The response body MUST be a valid JSON Object.
 
 **Note:** In the case of a failed creation of a resource entity, the resource entity at the Location URL still exists for a certain period of time and returns proper `state` to reflect the creation failure.
 
@@ -133,14 +143,6 @@ The response body MUST be a valid JSON Object (`{}`).
 `:resources_type` MUST be a valid Service Manager resource type.
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
-
-#### Headers
-
-The following HTTP Headers are defined for the operations.
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
 
 ### Response
 
@@ -159,7 +161,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`). Each resource API in this document should include a relevant example.
+The response body MUST be a valid JSON Object. Each resource API in this document should include a relevant example.
 
 The response body MUST include information about the resource's `state`.
 
@@ -177,17 +179,7 @@ Returns all resource entities of this resource type.
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-This endpoint supports [paging](#paging).
-
-This endpoint supports [filtering](#filtering).
-
-### Headers
-
-The following HTTP Headers are defined for the operations.
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
+This endpoint supports [filtering](#filtering-Parameters) and [paging](#paging-parameters).
 
 ### Filtering Parameters
 
@@ -237,7 +229,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`). Additional details are provided in the response body section of [paging](#paging).
+The response body MUST be a valid JSON Object. Additional details are provided in the response body section of [paging](#paging-parameters).
 
 The response MUST contain information about the resource entities' `states`.
 
@@ -282,19 +274,9 @@ The response MUST contain information about the resource entities' `states`.
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
-#### Headers 
-
-The following HTTP Headers are defined for the operations:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
 #### Body
 
-The body MUST be a valid JSON Object (`{}`). Each resource API in this document should include a relevant example.
+The body MUST be a valid JSON Object. Each resource API in this document should include a relevant example.
 
 All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fields that are explicitly supplied a `null` value MUST be nulled out provided that they are not mandatory for the resource type.
 
@@ -318,7 +300,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`).
+The response body MUST be a valid JSON Object.
 
 For a success response, the response body MAY be `{}`.
 
@@ -336,22 +318,12 @@ For a success response, the response body MAY be `{}`.
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
-#### Headers 
-
-The following HTTP Headers are defined for the operations:
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Authorization* | string | Provides a means for authentication and authorization |
-
-\* Headers with an asterisk are REQUIRED.
-
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| force | boolean | Whether to force the deletion of the resource and all asociated resources from Service Manager. No call to the actual Service Broker is performed. |
-| cascade | boolean | Some resources cannot be deleted if there are certain other resources that semantically link to them (for example a service instance can only be deleted if all the service bindings to it are deleted first). This parameter allows cascade deletion of resource entities that are asociated with a particular resource entity before deleting the actual resource entity. Defaults to `false`. |
+| force | boolean | Whether to force the deletion of the resource and all associated resources from Service Manager. No call to the actual Service Broker is performed. Defaults to `false`. |
+| cascade | boolean | Some resources cannot be deleted if there are certain other resources that semantically link to them (for example a service instance can only be deleted if all the service bindings to it are deleted first). This parameter allows cascade deletion of resource entities that are associated with a particular resource entity before deleting the actual resource entity. Defaults to `false`. |
 
 ### Response
 
@@ -372,7 +344,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 #### Body
 
-The response body MUST be a valid JSON Object (`{}`).
+The response body MUST be a valid JSON Object.
 
 For a success response, the expected response body MUST be `{}`.
 
@@ -455,7 +427,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 | Request field | Type | Description |
 | ------------- | ---- | ----------- |
 | id  | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. If not provided, the Service Manager generates an ID. |
-| name* | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
+| name* | string | A CLI-friendly name of the platform. MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
 | labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
@@ -601,7 +573,7 @@ Updating of a `platform` resource entity MUST comply with [patching a resource e
 
 | Request field | Type | Description |
 | ------------- | ---- | ----------- |
-| name | string | A CLI-friendly name of the platform. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
+| name | string | A CLI-friendly name of the platform. MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
 
@@ -653,7 +625,7 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| name* | string | A CLI-friendly name of the service broker. MUST only contain alphanumeric characters and hyphens (no spaces). MUST be unique across all service brokers registered with the Service Manager. MUST be a non-empty string. |
+| name* | string | A CLI-friendly name of the service broker. MUST be unique across all service brokers registered with the Service Manager. MUST be a non-empty string. |
 | description | string | A description of the service broker. |
 | broker_url* | string | MUST be a valid base URL for an application that implements the OSB API |
 | credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
@@ -1347,7 +1319,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 
 ## Service Visibility Management
 
-There are currently ongoing discussions as to how platform and service visilibities should be handled in SM.
+There are currently ongoing discussions as to how platform and service visilibities should be handled in Service Manager.
 TODO: Add content here.
 
 ## Information Management
@@ -1545,7 +1517,7 @@ When a request to the Service Manager fails, it MUST return an
 appropriate HTTP response code. Where the specification defines the expected
 response code, that response code MUST be used.
 
-The response body MUST be a valid JSON Object (`{}`).
+The response body MUST be a valid JSON Object.
 For error responses, the following fields are defined. The Service Manager MAY
 include additional fields within the response.
 
@@ -1562,6 +1534,15 @@ Example:
   "description": "The supplied credentials could not be authorized"
 }
 ```
+
+### Error Codes
+
+There are failure scenarios described throughout this specification for which
+the `error` field MUST contain a specific string. Service Broker authors MUST
+use these error codes for the specified failure scenarios.
+
+| Error | Reason | Expected Action |
+| --- | --- | --- |
 
 ## Content Type
 
