@@ -16,14 +16,20 @@
     - [Retrieving All Service Brokers](#retrieving-all-service-brokers)
     - [Deleting a Service Broker](#deleting-a-service-broker)
     - [Updating a Service Broker](#updating-a-service-broker)
-  - [Visibilities](#visibilities)
+  - [Visibility Management](#visibility-management)
     - [Creating a Visibility](#creating-a-visibility)
     - [Retrieving a Visibility](#reitrieving-a-visibility)
     - [Retrieving All Visibilities](#retrieving-all-visibilities)
     - [Deleting a Visibility](#deleting-a-visibility)
     - [Updating a Visibility](#updating-a-visibility)
   - [Labels](#labels)
-    - [Label Changes](#label-changes)
+    - [Syntax](#syntax)
+    - [Label Management](#label-management)
+        - [Attaching Labels](#attaching-labels)
+        - [Detaching Labels](#detaching-labels)
+        - [Adding Label Values](#adding-label-values)
+        - [Removing Label values](#removing-label-values)
+    - [Label Change Object](#label-change-object)
   - [Information](#information)
   - [Service Management](#service-management)
   - [Credentials Object](#credentials-object)
@@ -702,7 +708,7 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ## Visibility Management
 
-Visibilities in the Service Manager are used to manage which platform sees which service plan. In addition, labels can be attached to a visibility to further scope the access of the plan inside the platform (if applicable).
+Visibilities in the Service Manager are used to manage which platform sees which service plan. If applicable, labels MAY be attached to a visibility to further scope the access of the plan inside the platform.
 
 ## Creating a Visibility
 
@@ -997,7 +1003,282 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ## Labels
 
-## Label Changes
+Specific resources in the Service Manager MAY be labeled in order to be organized into groups relevant to the users.  
+This specification does not limit which resources MUST be labeled. However, all resources that might benefit from having labels, are presented in ther extended form contaning labels.
+
+### Syntax
+
+Labels MUST consist of one or more keys, where each key MUST be mapped to a list of values.  
+
+This specification does not restrict the allowed character set, length of keys and values or reserved/mandatory keys per resource.
+
+##### Labels Object
+```json
+{
+    ...
+    "labels": {
+        "key1": ["value1", "value2"],
+        "key2": ["value3", "value4"]
+    }
+}
+```
+
+### Label Management
+
+### Attaching Labels
+
+Labels SHOULD be attached to a resource at creation time, or later by updating the respective resource. For example on how to attach a label to a resource post-creation, see [Updating Labels](#updating-labels).
+
+### Route
+`POST /v1/:resource_type`
+
+`:resource_type` MUST be a valid Service Manager resource type. 
+
+### Request Body
+```json
+{
+    ...
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| labels* | [labels object](#labels-object) | MUST be a valid labels object |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+Each `resource type` decides on the returned response statuses.  
+Below are the statuses that are recommended when attaching a label at creation time.
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 201 Created | MUST be returned if the labels were created as a result of this request. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the labels have invalid syntax. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).  
+The labels MUST be returned as part of the response.
+
+```json
+{
+    ...
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| labels*    | [Labels](#labels) object | Labels for this resource. |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Detaching Labels
+
+Labels SHOULD be detached only by updating a resource.
+
+### Route
+`PATCH /v1/:resource_type/:resource_id`
+
+`:resource_type` MUST be a valid Service Manager resource type.  
+`:resource_id` MUST be the ID of a previously created resource of this resource type.
+
+### Request Body
+```json
+{
+    ...
+    "labels": [
+        {
+            "op": "remove",
+            "key": "label2"
+        }
+    ]
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| labels* | array of [Label Changes](#label-change-object) | MUST be a valid array of label changes |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+Each `resource type` decides on the returned response statuses.  
+Below are the statuses that are recommended when detaching a label.
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the labels were detached as a result of this request. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the label detachment is invalid. An invalid label detachment is one where either the label key has invalid syntax, or a label with such key was not previously attached to the resource. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).  
+The calculated labels MUST be returned as part of the response.
+
+```json
+{
+    ...
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| labels*    | [Labels](#labels) object | Labels for this resource. |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Adding Label Values
+
+Label values SHOULD be added only by updating the resource that the label is attached to.
+
+### Route
+`PATCH /v1/:resource_type/:resource_id`
+
+`:resource_type` MUST be a valid Service Manager resource type.  
+`:resource_id` MUST be the ID of a previously created resource of this resource type.
+
+### Request Body
+```json
+{
+    ...
+    "labels": [
+        {
+            "op": "add_values",
+            "key": "label1",
+            "values": ["value2", "value3"]
+        }
+    ]
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| labels* | array of [Label Changes](#label-change-object) | MUST be a valid array of label changes |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+Each `resource type` decides on the returned response statuses.  
+Below are the statuses that are recommended when adding new values to a label.
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the values were added to the label with the specified key as a result of this request. If a label with such key is not attached to the resource, it SHOULD be created and attached to the resource. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the label change is invalid. An invalid add-values label change is one where either the label key and/or values have invalid syntax, or one or more of the values are already mapped to a label with this key. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).  
+The calculated labels MUST be returned as part of the response.
+
+```json
+{
+    ...
+    "labels": {
+        "label1": ["value1", "value2", "value3"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| labels*    | [Labels](#labels) object | Labels for this resource. |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Removing Label Values
+
+Label values SHOULD be removed only by updating the resource that the label is attached to.
+
+### Route
+`PATCH /v1/:resource_type/:resource_id`
+
+`:resource_type` MUST be a valid Service Manager resource type.  
+`:resource_id` MUST be the ID of a previously created resource of this resource type.
+
+### Request Body
+```json
+{
+    ...
+    "labels": [
+        {
+            "op": "remove_values",
+            "key": "label1",
+            "values": ["value2"]
+        }
+    ]
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| labels* | array of [Label Changes](#label-change-object) | MUST be a valid array of label changes |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+Each `resource type` decides on the returned response statuses for this resource.  
+Below are the statuses that are recommended when remove values from a label.
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the values were remove from the label with the specified key as a result of this request. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the label change is invalid. An invalid remove-values label change is one where either the label key and/or values have invalid syntax, one or more of the values were not mapped to a label with this key, or a label with this key is not attached to the resource. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).  
+The calculated labels MUST be returned as part of the response.
+
+```json
+{
+    ...
+    "labels": {
+        "label1": ["value1", "value2", "value3"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| labels*    | [Labels](#labels) object | Labels for this resource. |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Label Change Object
+
+Each change of a label MUST be performed by passing a label change object, which is a JSON-Patch-like object that allows for modification of existing labels and attaching new labels to resources.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| op* | [label change operation](#label-change-operation) | Operation for updating the label change |
+| key* | string | Key of the label to be changed |
+| values* | array of strings | Values to be changed |
+
+\* Field MAY be required depending on the [label change operation](#label-change-operation).
+
+### Label Change Operation
+
+This specification does not limit the operations, but these are the minimum set of operations that MUST be supported.
+
+| Operation | Description |
+| --------- | ----------- |
+| add | Adds a new label with the specified key and values. All fields are required. |
+| add_values | Appends new values to the label with the specified key. All fields are required. |
+| remove | Removes the label with the specified key. `values` field is optional. `op` and `key` fields are required. |
+| remove_values | Removes the values from the label with the specified key. All fields are required. |
+
 
 ## Information
 
