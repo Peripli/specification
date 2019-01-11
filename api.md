@@ -16,6 +16,14 @@
     - [Retrieving All Service Brokers](#retrieving-all-service-brokers)
     - [Deleting a Service Broker](#deleting-a-service-broker)
     - [Updating a Service Broker](#updating-a-service-broker)
+  - [Visibilities](#visibilities)
+    - [Creating a Visibility](#creating-a-visibility)
+    - [Retrieving a Visibility](#reitrieving-a-visibility)
+    - [Retrieving All Visibilities](#retrieving-all-visibilities)
+    - [Deleting a Visibility](#deleting-a-visibility)
+    - [Updating a Visibility](#updating-a-visibility)
+  - [Labels](#labels)
+    - [Label Changes](#label-changes)
   - [Information](#information)
   - [Service Management](#service-management)
   - [Credentials Object](#credentials-object)
@@ -691,6 +699,305 @@ The response body MUST be a valid JSON Object (`{}`).
 | metadata | object | Additional data associated with the service broker. This JSON object MAY have arbitrary content. |
 
 \* Fields with an asterisk are REQUIRED.
+
+## Visibility Management
+
+Visibilities in the Service Manager are used to manage which platform sees which service plan. In addition, labels can be attached to a visibility to further scope the access of the plan inside the platform (if applicable).
+
+## Creating a Visibility
+
+### Route
+`POST /v1/visibilities`
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Request Body
+```json
+{
+    "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+    "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| platform_id | string | If present, MUST be the ID of an existing Platform. If missing, this means that the plan is visible to all platforms. |
+| service_plan_id* | string | MUST be the ID of an existing Service Plan. |
+| labels | labels object | MUST be a valid labels object |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 201 Created | MUST be returned if the visibility was created as a result of this request. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the visibility is invalid. An invalid visibility is one where either the platform_id or service_plan_id do not exist, or a visibility for this service_plan_id already exists, but with an empty platform_id. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 409 Conflict | MUST be returned if a visibility for this platform_id and service_plan_id already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+```json
+{
+    "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
+    "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+    "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| id*            | string | ID of the visibility. |
+| platform_id          | string | ID of the Platform for this visibility. |
+| service_plan_id*    | string | ID of the Service plan for this visibility. |
+| labels    | [Labels](#labels) object | Labels for this visibility. |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Retrieving a Visibility
+
+### Request
+
+#### Route
+
+`GET /v1/visibilities/:visibility_id`
+
+`:visibility_id` MUST be the ID of a previously created visibility
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution was successful. The expected response body is below. |
+| 404 Not Found | MUST be returned if the requested visibility is missing. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+##### Visibility Object
+```json
+{
+    "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
+    "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+    "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "labels": {
+        "label1": ["value1"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| id*            | string | ID of the visibility. |
+| platform_id      | string | ID of the Platform for this visibility. |
+| service_plan_id* | string | ID of the Service plan for this visibility. |
+| labels    | [Labels](#labels) object | Labels for this visibility. |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Retrieving All Visibilities
+
+### Request
+
+#### Route
+
+`GET /v1/visibilities`
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution was successful. The expected response body is below. |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+```json
+{
+    "visibilities": [
+        {
+            "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
+            "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+            "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+            "labels": {
+                "label1": ["value1"]
+            }
+        },
+        {
+            "id": "fbb0692a-76f3-42f6-b537-58b1be7ec618",
+            "platform_id": "e031d646-62a5-4a50-9d8e-23165172e9e1",
+            "service_plan_id": "acsded31-c303-123a-aab9-8crar19e1218",
+            "labels": {
+                "label2": ["value2"]
+            }
+        }
+    ]
+    
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| visibilities*  | array of [visibilities](#visibility-object) | List of existing visibilities. |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Deleting a Visibility
+
+### Request
+
+#### Route
+
+`DELETE /v1/visibilities/:visibility_id`
+
+`:visibility_id` MUST be the ID of a previously created visibility
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution was successful. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors).|
+| 404 Not Found | MUST be returned if the requested visibility is missing. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+For a success response, the expected response body is `{}`.
+
+## Updating a Visibility
+
+### Route
+`PATCH /v1/visibilities/:visibility_id`
+
+`:visibility_id` MUST be the ID of a previously created visibility
+
+#### Headers
+
+The following HTTP Headers are defined for this operation:
+
+| Header | Type | Description |
+| --- | --- | --- |
+| Authorization* | string | Provides a means for authentication and authorization |
+
+\* Headers with an asterisk are REQUIRED.
+
+### Request Body
+```json
+{
+    "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+    "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "labels": [
+        {
+            "op": "add",
+            "key": "label2",
+            "values": ["value2", "value3"]
+        }
+    ]
+}
+```
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| platform_id | string | If present, MUST be the ID of an existing Platform. |
+| service_plan_id | string | If present, MUST be the ID of an existing Service Plan. |
+| labels | array of [Label Changes](#label-changes) | MUST be a valid array of label changes |
+
+\* Fields with an asterisk are REQUIRED.
+
+### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the visibility was updated as a result of this request. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the request is malformed, missing mandatory data or the visibility update is invalid. An invalid visibility update is one where either the platform_id or service_plan_id do not exist, or a visibility for this service_plan_id already exists, but with an empty platform_id, or the label changes are invalid. The description field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 404 Not Found | MUST be returned if the requested visibility is missing. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
+
+Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
+
+#### Body
+
+The response body MUST be a valid JSON Object (`{}`).
+
+```json
+{
+    "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
+    "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
+    "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "labels": {
+        "label1": ["value1"],
+        "label2": ["value2", "value3"]
+    }
+}
+```
+
+| Response Field | Type | Description |
+| -------------- | ---- | ----------- |
+| id*            | string | ID of the visibility. |
+| platform_id      | string | ID of the Platform for this visibility. |
+| service_plan_id* | string | ID of the Service plan for this visibility. |
+| labels    | [Labels](#labels) object | Labels for this visibility calculated after the update. |
+
+\* Fields with an asterisk are REQUIRED.
+
+## Labels
+
+## Label Changes
 
 ## Information
 
