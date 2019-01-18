@@ -78,14 +78,16 @@ The Service Manager MUST return a `401 Unauthorized` response if the authenticat
 
 The Service Manager MUST return a `403 Forbidden` response if the client is not authorized to perform the requested operation.
 
+In both cases, the response body SHOULD follow the [Errors](#errors) section.
 
 ## Asynchronous Operations
 
-The Service Manager APIs for mutating (creating, deleting and updating) resources MUST work asynchronously. When such an operation is triggered, the Service Manager MUST respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the [state](#state-object) of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state.
+The Service Manager APIs for creating, deleting and updating entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a location to obtain details about the [state](#state-object) of this resource. Any Service Manager client MAY then use the Location header's value to poll for the `state` and use the details of the `state` to provide user facing information about the resource's state.
+The Service Manager MAY decide to execute operations synchronously. In this case it responses with `200 Ok`, `201 Created`, or `204 No Content`, 
 
 ### Concurrent Mutating Requests
 
-Service Manager does not support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and ID `:resource_id` is currently being created/updated/deleted and this operation is in progress, then no other asynchronous mutating operation can be executed on the resource of type `:resource_type` and ID `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
+Service Manager MAY NOT support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and ID `:resource_id` is currently being created, updated or deleted and this operation is in progress, then other mutating operation MAY fail on the resource of type `:resource_type` and ID `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
 
 ## General Resource Management
 
@@ -113,6 +115,7 @@ Some APIs may allow passing in the resource entity `id` (that is the ID to be us
 
 | Status Code | Description |
 | ----------- | ----------- |
+| 201 Created | MUST be returned if the resource has been created. |
 | 202 Accepted | MUST be returned if a resource creation is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 409 Conflict | MUST be returned if a resource with the same `name` or `id` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
@@ -124,7 +127,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+| Location | string | An URL from where information about the [state](#state-object) of the resource can be obtained. This header MUST be present if the status `202 Accepted` has been returned. |
 
 #### Body
 
@@ -153,12 +156,6 @@ The response body MUST be a valid JSON Object.
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
 
-#### Headers
-
-| Header | Type | Description |
-| ------ | ---- | ----------- |
-| Location | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
-
 #### Body
 
 The response body MUST be a valid JSON Object. Each resource API in this document should include a relevant example.
@@ -179,11 +176,9 @@ Returns all resource entities of this resource type.
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-This endpoint supports [filtering](#filtering-Parameters) and [paging](#paging-parameters).
+This endpoint MUST support [filtering](#filtering-Parameters) and [paging](#paging-parameters).
 
 ### Filtering Parameters
-
-All `list` endpoints MUST support filtering.
 
 There are two types of filtering.
 
@@ -284,6 +279,7 @@ All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fiel
 
 | Status Code | Description |
 | ----------- | ----------- |
+| 200 OK | MUST be returned if the resource has been updated. |
 | 202 Accepted | MUST be returned if a resource updating is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
 | 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
@@ -296,7 +292,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
+| Location | string | An URL from where information about the [state](#state-object) of the resource can be obtained. This header MUST be present if the status code `202 Accepted` has been returned. |
 
 #### Body
 
@@ -322,14 +318,16 @@ For a success response, the response body MAY be `{}`.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| force | boolean | Whether to force the deletion of the resource and all associated resources from Service Manager. No call to the actual Service Broker is performed. Defaults to `false`. |
+| force | boolean | Whether to force the deletion of the resource and all associated resources from Service Manager. Using this flag may result in inconsistent data! Defaults to `false`. |
 | cascade | boolean | Some resources cannot be deleted if there are certain other resources that semantically link to them (for example a service instance can only be deleted if all the service bindings to it are deleted first). This parameter allows cascade deletion of resource entities that are associated with a particular resource entity before deleting the actual resource entity. Defaults to `false`. |
 
 ### Response
 
 | Status Code | Description |
 | ----------- | ----------- |
+| 200 OK | MUST be returned if the resource has been deleted. The body MUST a non-empty, valid JSON object. If no data should be be returned from the Service Manager, the status code `204 No Content` SHOULD be used. |
 | 202 Accepted | MUST be returned if a resource deletion is performed as a result of this request. |
+| 204 No Content | MUST be returned if the resource has been updated and there is no additional data provided by the Service Manager. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or there are resource entities associated with the resource entity that is being deleted and `cascade` and `force` are `false`. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
@@ -340,13 +338,7 @@ Responses with any other status code will be interpreted as a failure. The respo
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location* | string | an URL from where information about the [state](#state-object) of the resource can be obtained |
-
-#### Body
-
-The response body MUST be a valid JSON Object.
-
-For a success response, the expected response body MUST be `{}`.
+| Location | string | An URL from where information about the [state](#state-object) of the resource can be obtained. This header MUST be present if the status code `202 Accepted` has been returned. |s
 
 **Note:** A response to a call to the Location URL will always return at least the `state` of the resource entity until the resource entity is gone (fully deleted) - then a `404 Not Found` MUST be returned.
 
@@ -466,7 +458,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
       "label1": ["value1"]
     },
     "state": {
-      "ready": "True",
+      "ready": true,
       "message": "Platform cf-eu-10 successfully provisioned"
     }
 }
@@ -481,7 +473,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST use to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
 | created_at | string | The time of the creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
-| labels* | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | state | [state object](#state-object) | The state of the platform. |
 
 \* Fields with an asterisk are REQUIRED.
@@ -518,7 +510,7 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
         "label1": ["value1"]
       },
       "state": {
-        "ready": "True",
+        "ready": true,
         "message": "Platform cf-eu-10 successfully provisioned"
       }
     },
@@ -539,7 +531,7 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
 
       },
       "state": {
-        "ready": "True",
+        "ready": true,
         "message": "Platform k8s-us-05 successfully provisioned"
       }
     }
@@ -576,6 +568,7 @@ Updating of a `platform` resource entity MUST comply with [patching a resource e
 | name | string | A CLI-friendly name of the platform. MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
+| labels | array of label patches | See [Patching Labels](#patching-labels). |
 
 All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed.
 
@@ -661,7 +654,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
       "label1": ["value1"]
     },
     "state": {
-      "ready": "True",
+      "ready": true,
       "message": "Service Broker service-broker-name successfully created"
     }
 }
@@ -707,7 +700,7 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
         "label1": ["value1"]
       },
       "state": {
-        "ready": "True",
+        "ready": true,
         "message": "Service Broker service-broker-name successfully created"
       }
     },
@@ -722,7 +715,7 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
 
       },
       "state": {
-        "ready": "True",
+        "ready": true,
         "message": "Service Broker another-broker successfully created"
       }
     }
@@ -767,7 +760,7 @@ Updating of a `service broker` resource entity MUST comply with [patching a reso
 | description | string | A description of the service broker. |
 | broker_url | string | MUST be a valid base URL for an application that implements the OSB API |
 | credentials | [credentials](#credentials-object) | If provided, MUST be a valid credentials object which will be used to authenticate against the service broker. |
-| labels | array of [labels](#label-object) | Additional data associated with the service broker. |
+| labels | array of label patches | See [Patching Labels](#patching-labels). |
 
 All fields are OPTIONAL. Fields that are not provided MUST NOT be changed.
 
@@ -797,10 +790,23 @@ Creation of a `service instance` resource entity MUST comply with [creating a re
 
 ### Request Body
 
+#### Service Instance Object
+
+| Request field | Type | Description |
+| -------------- | ---- | ----------- |
+| name* | string | A non-empty instance name. |
+| service_id* | string | MUST be the ID of a Service Offering. |
+| plan_id* | string | MUST be the ID of a Service Plan. |
+| parameters | object | object	Configuration parameters for the Service Instance. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+
+\* Fields with an asterisk are REQUIRED.
+
 ```json
 {  
   "name": "my-service-instance",
-  "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+  "service_id": "service-offering-id-here",
+  "plan_id": "service-plan-id-here",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
@@ -828,6 +834,22 @@ Fetching of a `service instance` resource entity MUST comply with [fetching a re
 ### Response Body
 
 #### Service Instance Object
+
+| Response field | Type | Description |
+| -------------- | ---- | ----------- |
+| id | string | Service Instance ID. | 
+| name | string | Service Instance name. |
+| service_id | string | MUST be the ID of a Service Offering. |
+| plan_id | string | MUST be the ID of a Service Plan. |
+| dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard.  |
+| parameters | object |	Configuration parameters for the Service Instance. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+| created_at | string | The time of the creation in ISO-8601 format. |
+| updated_at | string | The time of the last update in ISO-8601 format. |
+| state | [state object](#state-object) | The state of the platform. |
+
+\* Fields with an asterisk are REQUIRED.
+
 
 ```json
 {  
@@ -876,6 +898,10 @@ Listing `service instances` MUST comply with [listing all resource entities of a
 `GET /v1/service_instances`
 
 ### Response Body
+
+#### Array of Service Instance Objects
+
+:warning: TODO
 
 ```json
 {  
@@ -977,6 +1003,20 @@ Creation of a `service binding` resource entity MUST comply with [creating a res
 
 ### Request Body
 
+#### Service Instance Object
+
+| Request field | Type | Description |
+| -------------- | ---- | ----------- |
+| name* | string | A non-empty instance name. |
+| service_id* | string | MUST be the ID of a Service Offering. |
+| plan_id* | string | MUST be the ID of a Service Plan. |
+| bind_resource | BindResource | :warning: TODO |
+| parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+
+\* Fields with an asterisk are REQUIRED.
+
+
 ```json
 {  
   "name": "my-service-binding",
@@ -1009,6 +1049,19 @@ Fetching of a `service binding` resource entity MUST comply with [fetching a res
 
 #### Service Binding Object
 
+| Response field | Type | Description |
+| -------------- | ---- | ----------- |
+| id | string | Service Binding ID. | 
+| name | string | Service Binding name. |
+| service_instance_id | string | Service Instance ID. |
+| binding | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
+| parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+| created_at | string | The time of the creation in ISO-8601 format. |
+| updated_at | string | The time of the last update in ISO-8601 format. |
+| state | [state object](#state-object) | The state of the platform. |
+
+
 ```json
 {  
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
@@ -1029,7 +1082,7 @@ Fetching of a `service binding` resource entity MUST comply with [fetching a res
     ]
   },
   "state": {  
-    "ready": "True",
+    "ready": true,
     "message": "Service Binding is created",
     "causes": [  
       {  
@@ -1055,6 +1108,8 @@ Listing `service bindings` MUST comply with [listing all resource entities of a 
 
 ###  Response Body
 
+:warning: TODO 
+
 ```json
 {  
   "has_more_items": false,
@@ -1079,7 +1134,7 @@ Listing `service bindings` MUST comply with [listing all resource entities of a 
         ]
       },
       "state": {  
-        "ready": "True",
+        "ready": true,
         "message": "Service Binding is created",
         "causes": [  
           {  
@@ -1108,6 +1163,13 @@ Updating of a `service binding` resource entity MUST comply with [patching a res
 `:service_binding_id` The ID of a previously created service binding.
 
 ### Request Body
+
+| Request field | Type | Description |
+| -------------- | ---- | ----------- |
+| name | string | A non-empty instance name. |
+| labels | array of label patches | See [Patching Labels](#patching-labels). |
+
+\* Fields with an asterisk are REQUIRED.
 
 ```json
 {  
@@ -1151,6 +1213,19 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
 ###  Response Body
 
 #### Service Offering Object
+
+
+| Response field | Type | Description |
+| -------------- | ---- | ----------- |
+| id | string | Service Offering ID. | 
+| name | string | Service Offering name. |
+| description | string | Service Offering description. |
+| displayName | string | Service Offering displayName. |
+| :warning: TODO | | |
+| labels | array of [labels](#label-object) | Additional data associated with the resource entity. MAY be an empty array. |
+| created_at | string | The time of the creation in ISO-8601 format. |
+| updated_at | string | The time of the last update in ISO-8601 format. |
+
 
 ```json
 {  
@@ -1228,6 +1303,8 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 ### Response Body
 
 #### Service Plan Object
+
+:warning: TODO
 
 ```json
 {  
@@ -1320,7 +1397,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 ## Service Visibility Management
 
 There are currently ongoing discussions as to how platform and service visilibities should be handled in Service Manager.
-TODO: Add content here.
+:warning: TODO: Add content here.
 
 ## Information Management
 
@@ -1471,7 +1548,7 @@ Example of a Resource Entity that has labels:
 
 ### Naming Labels
 
-TODO: Add rules for labels naming
+:warning: TODO: Add rules for labels naming
 
 ### Patching Labels
 
@@ -1530,7 +1607,7 @@ Example:
 
 ```json
 {
-  "error": "InvalidCredentials",
+  "error": "Unauthorized",
   "description": "The supplied credentials could not be authorized"
 }
 ```
