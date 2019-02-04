@@ -522,7 +522,7 @@ The response body MUST be a valid JSON Object (`{}`).
 
 ```json
 {
-  "brokers": [
+  "service_brokers": [
     {
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "name": "service-broker-name",
@@ -548,7 +548,7 @@ The response body MUST be a valid JSON Object (`{}`).
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
-| brokers* | array of [service brokers](#service-broker-object) | List of registered service brokers. |
+| service_brokers* | array of [service brokers](#service-broker-object) | List of registered service brokers. |
 
 \* Fields with an asterisk are REQUIRED.
 
