@@ -56,7 +56,10 @@
 
 ## Overview
 
-The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups - a Service Manager Admin API to manage brokers and attached platforms, a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform) and an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
+The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
+- a Service Manager Admin API to manage brokers and attached platforms, 
+- a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform) 
+- an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). It implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
 One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
 
