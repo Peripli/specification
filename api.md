@@ -1,4 +1,3 @@
-
 # Service Manager API
 
 ## Table of Contents
@@ -56,7 +55,10 @@
 
 ## Overview
 
-The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups - a Service Manager Admin API to manage brokers and attached platforms, a Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform) and an OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
+The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
+- A Service Manager Admin API to manage brokers and attached platforms.
+- A Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform).
+- An OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
 One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
 
@@ -124,7 +126,7 @@ Some APIs may allow passing in the resource entity `id` (that is the ID to be us
 | ----------- | ----------- |
 | 201 Created | MUST be returned if the resource has been created. |
 | 202 Accepted | MUST be returned if a resource creation is successfully initiated as a result of this request. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 | 409 Conflict | MUST be returned if a resource with the same `name` or `id` already exists. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation for a resource with the same `name` or `id` is already in progress. |
 
@@ -181,7 +183,7 @@ Returns all resource entities of this resource type.
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-This endpoint MUST support [filtering](#filtering-Parameters) and [paging](#paging-parameters).
+This endpoint MUST support [filtering](#filtering-parameters) and [paging](#paging-parameters).
 
 #### Filtering Parameters
 
@@ -244,8 +246,8 @@ Paging can be controlled by the following query string parameters:
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 200 OK      | MUST be returned upon successful retrieval of the resource entities. The expected response body is below. |
-| 400 Bad Request | MUST be returned if the values of the `max_items` parameter or the `skip_count` parameter is not a positive number or if both, the `skip_count` parameter and the `last_id` parameter are provided. MUST also be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 200 OK | MUST be returned upon successful retrieval of the resource entities. The expected response body is below. |
+| 400 Bad Request | MUST be returned if the values of the `max_items` parameter or the `skip_count` parameter is not a positive number or if both, the `skip_count` parameter and the `last_id` parameter are provided. MUST also be returned if the request is malformed or missing mandatory data. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 
 Responses with any other status code will be interpreted as a failure. The response can include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -255,7 +257,7 @@ The response body MUST be a valid JSON Object.
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
-| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response.  `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed or `max_items` exceeds the internally supported page size).
+| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response. `false` otherwise. If `true`, a request with a larger `skip_count` or larger `max_items` is expected to return additional results (unless the list has changed or `max_items` exceeds the internally supported page size). |
 | num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
 | items* | array of objects | the list of items. This list MAY be empty. |
 
@@ -299,8 +301,8 @@ All fields are OPTIONAL. Fields that are not provided, MUST NOT be changed. Fiel
 | ----------- | ----------- |
 | 200 OK | MUST be returned if the resource has been updated. |
 | 202 Accepted | MUST be returned if a resource updating is successfully initiated as a result of this request. |
-| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
-| 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors).|
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
+| 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. The `description` field MAY be used to return a user-facing error message, providing details about which part of the request is malformed or what data is missing as described in [Errors](#errors). |
 | 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. The `description` field MAY be used to return a user-facing error message, as described in [Errors](#errors). |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
@@ -434,14 +436,14 @@ Responses with any other status code will be interpreted as a failure. The respo
     {
       "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
       "state": "in progress",
-      "description": "working on it",
+      "description": "Working on it.",
       "start_time": "2016-07-09T17:50:00Z",
       "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457"
     },
     {
       "operation_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
       "state": "failed",
-      "description": "deletion failed",
+      "description": "Deletion failed.",
       "start_time": "2016-07-09T17:48:01Z",
       "end_time": "2016-07-09T17:48:22Z",
       "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
@@ -526,7 +528,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
   "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
   "name": "cf-eu-10",
   "type": "cloudfoundry",
-  "description": "Cloud Foundry on AWS in Frankfurt",
+  "description": "Cloud Foundry on AWS in Frankfurt.",
   "labels": {
     "label1": ["value1"]
   }
@@ -535,7 +537,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 
 | Request field | Type | Description |
 | ------------- | ---- | ----------- |
-| id  | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. If not provided, the Service Manager generates an ID. |
+| id | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. If not provided, the Service Manager generates an ID. |
 | name* | string | A CLI-friendly name of the platform. MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | description | string | A description of the platform. |
@@ -562,7 +564,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
     "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
     "name": "cf-eu-10",
     "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
+    "description": "Cloud Foundry on AWS in Frankfurt.",
     "created_at": "2016-06-08T16:41:22Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "credentials" : {
@@ -609,7 +611,7 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
       "name": "cf-eu-10",
       "type": "cloudfoundry",
-      "description": "Cloud Foundry on AWS in Frankfurt",
+      "description": "Cloud Foundry on AWS in Frankfurt.",
       "created_at": "2016-06-08T16:41:22Z",
       "updated_at": "2016-06-08T16:41:26Z",
       "credentials" : {
@@ -626,7 +628,7 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "id": "e031d646-62a5-4a50-9d8e-23165172e9e1",
       "name": "k8s-us-05",
       "type": "kubernetes",
-      "description": "Kubernetes on GCP in us-west1",
+      "description": "Kubernetes on GCP in us-west1.",
       "created_at": "2016-06-08T17:41:22Z",
       "updated_at": "2016-06-08T17:41:26Z",
       "credentials" : {
@@ -659,7 +661,7 @@ Updating of a `platform` resource entity MUST comply with [updating a resource e
 {
     "name": "cf-eu-10",
     "type": "cloudfoundry",
-    "description": "Cloud Foundry on AWS in Frankfurt",
+    "description": "Cloud Foundry on AWS in Frankfurt.",
     "labels": {
 
     }
@@ -703,7 +705,7 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 ```json
 {
     "name": "service-broker-name",
-    "description": "Service broker providing some valuable services",
+    "description": "Service broker providing some valuable services.",
     "broker_url": "http://service-broker.example.com",
     "credentials": {
         "basic": {
@@ -721,7 +723,7 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 | ---- | ---- | ----------- |
 | name* | string | A CLI-friendly name of the service broker. The Service Manager MAY change this name to make it unique across all registered brokers. MUST be a non-empty string. |
 | description | string | A description of the service broker. |
-| broker_url* | string | MUST be a valid base URL for an application that implements the OSB API |
+| broker_url* | string | MUST be a valid base URL for an application that implements the OSB API. |
 | credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
 | labels | collections of [labels](#labels-object) | Additional data associated with the service broker. |
 
@@ -747,7 +749,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 {
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "name": "service-broker-name",
-    "description": "Service broker providing some valuable services",
+    "description": "Service broker providing some valuable services.",
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
     "broker_url": "https://service-broker-url",
@@ -759,12 +761,12 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
-| id*            | string | ID of the service broker. |
-| name*          | string | Name of the service broker. |
-| description    | string | Description of the service broker. |
-| broker_url*    | string | URL of the service broker. |
-| created_at     | string | The time of creation in ISO-8601 format. |
-| updated_at     | string | The time of the last update in ISO-8601 format. |
+| id* | string | ID of the service broker. |
+| name* | string | Name of the service broker. |
+| description | string | Description of the service broker. |
+| broker_url* | string | URL of the service broker. |
+| created_at | string | The time of creation in ISO-8601 format. |
+| updated_at | string | The time of the last update in ISO-8601 format. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the service broker. MAY be an empty object. |
 
 \* Fields with an asterisk are REQUIRED.
@@ -787,7 +789,7 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
     {
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "name": "service-broker-name",
-      "description": "Service broker providing some valuable services",
+      "description": "Service broker providing some valuable services.",
       "created_at": "2016-06-08T16:41:26Z",
       "updated_at": "2016-06-08T16:41:26Z",
       "broker_url": "https://service-broker-url",
@@ -798,7 +800,7 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
     {
       "id": "a62b83e8-1604-427d-b079-200ae9247b60",
       "name": "another-broker",
-      "description": "More services",
+      "description": "More services.",
       "created_at": "2016-06-08T17:41:26Z",
       "updated_at": "2016-06-08T17:41:26Z",
       "broker_url": "https://another-broker-url",
@@ -826,7 +828,7 @@ Updating of a `service broker` resource entity MUST comply with [updating a reso
 ```json
 {
     "name": "service-broker-name",
-    "description": "Service broker providing some valuable services",
+    "description": "Service broker providing some valuable services.",
     "broker_url": "http://service-broker-url.com",
     "credentials": {
         "basic": {
@@ -844,7 +846,7 @@ Updating of a `service broker` resource entity MUST comply with [updating a reso
 | ---- | ---- | ----------- |
 | name | string | A CLI-friendly name of the service broker. The Service Manager MAY change this name to make it unique across all registered brokers. MUST be a non-empty string. |
 | description | string | A description of the service broker. |
-| broker_url | string | MUST be a valid base URL for an application that implements the OSB API |
+| broker_url | string | MUST be a valid base URL for an application that implements the OSB API. |
 | credentials | [credentials](#credentials-object) | If provided, MUST be a valid credentials object which will be used to authenticate against the service broker. |
 | labels | array of label patches | See [Patching Labels](#patching-labels). |
 
@@ -903,7 +905,7 @@ Creation of a `service instance` resource entity MUST comply with [creating a re
 
 \* Fields with an asterisk are REQUIRED.
 
-**Note:** Service Manager MUST also handle [mitigating orphans](#orphans-mitigation) in the context of service instances.
+**Note:** Service Manager MUST also handle [mitigating orphans](#mitigating-orphans) in the context of service instances.
 
 ### Fetching a Service Instance
 
@@ -947,7 +949,7 @@ Fetching of a `service instance` resource entity MUST comply with [fetching a re
 | service_id* | string | MUST be the ID of a Service Offering. |
 | plan_id* | string | MUST be the ID of a Service Plan. |
 | platform_id* | string | MUST be the ID of the platform that owns this instance. |
-| dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard.  |
+| dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
 | parameters | object |	Configuration parameters for the Service Instance. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | created_at | string | The time of the creation in ISO-8601 format. |
@@ -1080,7 +1082,7 @@ Creation of a `service binding` resource entity MUST comply with [creating a res
 
 \* Fields with an asterisk are REQUIRED.
 
-**Note:** Service Manager MUST also handle [mitigating orphans](#orphans-mitigation) in the context of service bindings.
+**Note:** Service Manager MUST also handle [mitigating orphans](#mitigating-orphans) in the context of service bindings.
 
 ### Fetching a Service Binding
 
@@ -1248,9 +1250,9 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
   "service": {
     "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
     "name": "my-service-offering",
-    "description": "service offering description",
+    "description": "A service offering description.",
     "displayName": "postgres",
-    "longDescription": "local postgres",
+    "longDescription": "A service offering long description.",
     "bindable": true,
     "plan_updateable": false,
     "instances_retrievable": false,
@@ -1298,9 +1300,9 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
       "service": {
         "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
         "name": "my-service-offering",
-        "description": "service offering description",
+        "description": "A service offering description.",
         "displayName": "display-name",
-        "longDescription": "long-name",
+        "longDescription": "A service offering long description.",
         "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
         "bindable": true,
         "plan_updateable": false,
@@ -1348,7 +1350,7 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
     "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
     "name": "plan-name",
     "free": false,
-    "description": "description",
+    "description": "This a plan description.",
     "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
     "extra": null,
     "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
@@ -1415,7 +1417,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
         "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
         "name": "plan-name",
         "free": false,
-        "description": "description",
+        "description": "This is a plan description.",
         "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
         "extra": null,
         "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
@@ -1524,7 +1526,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
 ## Status Object
 
-|  Field | Type | Description |
+| Field | Type | Description |
 | -------------- | ---- | ----------- |
 | operation_id* | string | The ID of the operation. |
 | state* | string | Valid values are `in progress`, `succeeded`, and `failed`. While `"state": "in progress"`, the Platform SHOULD continue polling. A response with `"state": "succeeded"` or `"state": "failed"` MUST cause the Platform to cease polling. |
@@ -1540,7 +1542,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 {
   "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
   "state": "in progress",
-  "description": "working on it",
+  "description": "Working on it.",
   "start_time": "2016-07-09T17:50:00Z",
   "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457"
 }
@@ -1550,7 +1552,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 {
   "operation_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
   "state": "failed",
-  "description": "deletion failed",
+  "description": "Deletion failed.",
   "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
   "start_time": "2016-07-09T17:48:01Z",
   "end_time": "2016-07-09T17:48:22Z",
@@ -1656,7 +1658,7 @@ Example:
 ```json
 {
   "error": "Unauthorized",
-  "description": "The supplied credentials could not be authorized"
+  "description": "The supplied credentials could not be authorized."
 }
 ```
 
@@ -1670,23 +1672,23 @@ use these error codes for the specified failure scenarios.
 | --- | --- | --- | --- |
 | BrokerError | xxx | The upstream broker returned an error. | |
 | BadRequest | 400 | Malformed or missing mandatory data. This error SHOULD only be used if there is no other, more specific defined error. | Retry with corrected input data. |
-| InvalidLabelName | 400 | The label name is invalid.  | Retry with a different label name. |
-| UnknownLabel | 400 | The label doesn't exist.  | |
-| ProtectedLabel | 400 | The label values cannot be changed.  | |
-| InvalidLabelQuery | 400 | The label query is invalid.  | Retry with corrected label query. |
-| InvalidFieldQuery | 400 | The field query is invalid.  | Retry with corrected field query. |
-| UnsupportedFieldQuery | 400 | The field query contains a field that is not queryable.  | |
-| InvalidMaxItems | 400 | The `max_items` parameter is not a positive number. | |
-| InvalidSkipCount | 400 | The `skip_count` parameter is not a positive number. | |
-| InvalidPagingParameters | 400 | The `skip_count` and the `last_id` parameters are both provided. | |
-| DependantEntities | 400 | The entity cannot be deleted because other entities depend on it.  | Set the `cascade` or `force` flag. |
+| InvalidLabelName | 400 | The label name is invalid. | Retry with a different label name. |
+| UnknownLabel | 400 | The label doesn't exist. | |
+| ProtectedLabel | 400 | The label values cannot be changed. | |
+| InvalidLabelQuery | 400 | The label query is invalid. | Retry with corrected label query. |
+| InvalidFieldQuery | 400 | The field query is invalid. | Retry with corrected field query. |
+| UnsupportedFieldQuery | 400 | The field query contains a field that is not queryable. | |
+| InvalidMaxItems | 400 | The `max_items` parameter is not a positive number. | Retry with no or a valid `max_items` parameter. |
+| InvalidSkipCount | 400 | The `skip_count` parameter is not a positive number. | Retry with nor or a valid `skip_count` parameter. |
+| InvalidPagingParameters | 400 | The `skip_count` and the `last_id` parameters are both provided. | Retry with either a `skip_count` parameter or a `last_id` parameter. |
+| DependantEntities | 400 | The entity cannot be deleted because other entities depend on it. | Set the `cascade` or `force` flag. |
 | Unauthorized | 401 | Unauthenticated request. | Provide credentials or a token. |
 | Forbidden | 403 | The current user has no permission to execute the operation. | Retry operation with a different user. | 
 | NotFound | 404 | Entity not found or not visible to the current user. | |
 | IDConflict | 409 | An entity with this ID already exists. | Retry creation with another ID. |
 | NameConflict | 409 | An entity with this name already exists. | Retry creation with another name. |
 | LabelConflict | 409 | A label with this name already exists. | |
-| Gone | 410 | There is no data about the operation anymore. | |
+| Gone | 410 | There is no data about the operation anymore. | Don't retry. |
 | ConcurrentOperation | 422 | The entity is already processed by another operation. | Retry after the currently running operation is finished. |
 
 ## Content Type
