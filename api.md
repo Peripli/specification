@@ -1565,7 +1565,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
 ## Labels Object
 
-A label is a key-value pair that can be attached to a resource. The key MUST be string; the value MUST be an array of strings. Service Manager resources MAY have any number of labels represented by the `labels` field.
+A label is a key-value pair that can be attached to a resource. The key MUST be a string. The value MUST be a non-empty array of unique strings. Label keys and values MUST be compared in a case-sensitive way. Service Manager resources MAY have any number of labels represented by the `labels` field.
 
 This allows querying (filtering) on the `List` API of the resource based on multiple labels. The Service Manager MAY
 attach additional labels to the resources and MAY restrict updates and deletes for some of the labels.
@@ -1591,22 +1591,30 @@ Example of a Resource Entity that has labels:
 
 ### Naming Labels
 
-Label names SHOULD only consist of alphanumeric characters, periods, hyphens, and MUST NOT contain any white spaces. Label names that contain an equals character ('`=`') CANNOT be used in label queries.  
+Label names SHOULD only consist of alphanumeric characters, periods, hyphens, underscores and MUST NOT contain any white spaces. Label names that contain an equals character ('`=`') CANNOT be used in label queries.  
 Labels names SHOULD NOT be longer than 100 characters. The Service Manager MAY reject labels with longer names. 
 
 ### Patching Labels
 
-The PATCH APIs of the resources that support labels MUST support the following `label operations` in order to update labels and label values.
+The PATCH APIs of the resources that support labels MUST support update of labels and label values.
+
+`labels` is an optional field in the request JSON. If present, it MUST be an array of objects. Each object defines a label operation using the following format:
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| op* | string | The label operation to apply |
+| key* | string | The label key |
+| values | string array | The label values. If present, MUST NOT be empty. REQUIRED for `add` and `set` operations. |
+
+\* Fields with an asterisk are REQUIRED.
 
 | Operation | Description |
 | --------- | ----------- |
-| add | Adds a new label with the name in `label`. The `value` MUST be a string or an array of strings. If the label already exists, the operation fails as a `409 Conflict`. |
-| add_values | Appends a new value to a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails as `400 Bad Request`. If the value already exists, the operation does nothing. |
-| replace | Replaces a all values of a label with new values. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails as `400 Bad Request`. |
-| remove | Removes a label. If the label does not exist, the operation fails with `400 Bad Request`. |
-| remove_values | Removes a value from a label. The `value` MUST be a string or an array of strings. If the label does not exist, the operation fails with `400 Bad Request`. |
+| `add` | Adds a new label or new values. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, any new values MUST be added to the label. If any of the `values` already exist in the label, they MUST be ignored silently. Any existing values MUST remain unchanged. `values` field is REQUIRED. |
+| `set` | Adds a new label or overwrites an existing one. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, all label values MUST be replaced with the given `values`. `values` field is REQUIRED. |
+| `remove` | Removes a label or some of its values. If a label with the given `key` does not exist, the operation MUST be ignored silently. Otherwise, the given `values` MUST be removed from the specified label. Any existing label values not specified in `values`, MUST remain unchanged. If any of the `values` are not present in the label, they MUST be ignored silently. If the label remains with no values, it MUST be removed completely. If `values` field is not provided, the whole label with all its values MUST be removed. |
 
-If one operations fails, none of the changes will be applied.
+All operations in one request MUST be performed as one atomic change. Either all or none of them are performed.
 
 #### Example
 
