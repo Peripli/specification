@@ -3,6 +3,8 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Terminology and Definitions](#terminology-and-definitions)
+- [Localization](#localization)
 - [Asynchronous Operations](#asynchronous-operations)
 - [General Resource Management](#general-resource-management)
   - [Creating a Resource Entity](#creating-a-resource-entity)
@@ -62,8 +64,8 @@
 
 The Service Manager API defines an REST interface that allows the management of platforms, brokers, service offerings, plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
 - A Service Manager Admin API to manage brokers and attached platforms.
-- A Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager (Service Manager as a platform).
-- An OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager (Service Manager as a broker). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
+- A Service Controller API that allows the Service Manager to act as an OSB platform for service brokers that are registered in Service Manager ("Service Manager as a Platform").
+- An OSB API which allows the Service Manager to act as a service broker for platforms that are registered in Service Manager ("Service Manager as a Broker"). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
 One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
 
@@ -77,6 +79,29 @@ Additionally, the follow terms and concepts are use:
 * *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 100 characters and SHOULD only consist of alphanumeric characters, periods, and hyphens. Using a GUID is RECOMMENDED.
 * *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods, hyphens, and no white spaces. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
 * *Description*: A description is a human readable string, which SHOULD NOT exceed 255 characters. If a description is longer than 255 characters, the Service Manager MAY silently truncate it.
+
+## Localization
+
+Many entities and errors contain a human readable descriptions. (The description field is called `description` in most cases.) If a clients provides an `Accept-Language` HTTP header and the Service Manager has a localized, matching description string, it SHOULD provide the localized description. If no matching description is available, the Service Manager MUST fall back to a default description.
+
+Whenever a client provides a value for a `description` field, for example when an entity is created, updated or patched, the client MAY also provide an additional object called `description--i18n`. This object contains translations of the default description that is provided in the `description` field. A client MUST NOT provide a  `description--i18n` object without an accompanied `description` field. A `description` field without an accompanied `description--i18n` object, removes existing all description translations.
+
+The keys within the `description--i18n` object SHOULD be either ISO 639-1 language codes (for example "de") or ISO 639-1 language codes followed by a hyphen ('`-`') followed by a ISO 3166 country code (for example "de-CH").
+The values SHOULD be non-empty translations of the `description` field value and MUST follow the same rules and length restrictions of the `description` field.
+
+```json
+{
+  ...
+  "description": "Subway Schedule Service Broker",
+  "description--i18n": {
+    "en-GB": "Underground Schedule Service Broker",
+    "de": "U-Bahn Fahrplan Service Broker"
+  }
+  ...  
+}
+```
+
+The Service Manager MAY store and use all or a subset of the entries in the `description--i18n` object or MAY ignore this object completely.
 
 
 ## Authentication an Authorization
@@ -147,8 +172,6 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 Unless defined otherwise in the sections below, the response body MUST be [the representation of the entity](#fetching-a-resource-entity) if the status code is `201 Created` or MUST be a [status object](#status-object) if the status code is `202 Accepted`.
 
-
-
 ### Fetching a Resource Entity
 
 #### Request
@@ -160,6 +183,19 @@ Unless defined otherwise in the sections below, the response body MUST be [the r
 `:resources_type` MUST be a valid Service Manager resource type.
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
+
+
+#### Fields and Labels Parameters
+
+Some entity representations are rather large and most client scenarios only require a specific subset of the data. The query parameters `fields` and `labels` allow a client to specify, which data should be returned.
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| fields | string | A comma separated list of top-level fields that MUST be returned. The Service Manager MAY return additional fields. Fields that don't exist at the entity MUST be ignored. If this parameter is missing, the Service Manager provides a default set of fields. |
+| labels | string | A comma separated list of labels that MUST be returned, if they exist at the entity. If this parameter is missing and the `label` field has not been excluded, all labels MUST be returned. If the `labels` field is excluded from the response (because it's not part of the default field set or it has not been specified in the `fields` parameter), the `labels` field SHOULD NOT be provided even if this parameter is set. |
+
+Example: `GET /v1/service_instances/aaa37597-9439-4b9b-be90-5efa8237d579?fields=id,name,service_id,parameters,labels`
+
 
 #### Response
 
@@ -188,6 +224,11 @@ Returns all resource entities of this resource type.
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
+#### Fields and Labels Parameters
+
+This endpoint MUST also support the `fields` and `labels` query parameters that are defined for [fetching an entity](#fetching-a-resource-entity). These parameters refer to the entities in the result set.
+
+
 #### Filtering Parameters
 
 There are two types of filtering.
@@ -203,9 +244,9 @@ Filtering can be controlled by the following query string parameters:
 | fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
 
-  Example: `GET /v1/:service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
+  Example: `GET /v1/service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
 
-  Example: `GET /v1/:service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
+  Example: `GET /v1/service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
 
 ##### Filter Syntax and Rules
@@ -215,6 +256,19 @@ Filtering can be controlled by the following query string parameters:
 * The Service Manager SHOULD support field queries on top-level fields with string, boolean, and integer values. The interpretation of other value types is implementation specific. In general, the Service Manager SHOULD reject field queries for all other value types.
 * The Service Manage SHOULD support queries on all fields that hold a name or an ID. These fields are usually named '`id`' or '`name`' or the field name ends with '`_id`'.
 * The Service Manager MAY also support field queries on nested fields. If so, the path to the field MUST be separated by a dot ('`.`'). Elements of an array are addressed with the index after the field name in square brackets('`[]`'). For example, a path could look like this: `credentials[0].basic.username`.
+
+* The Service Manager MUST support the following operators:
+  * Equals: `eq`
+  * Not equals: `ne`
+  * In: `in`
+  * Not In:  `notin`
+  * And: `and`
+
+* Additionally, the Service Manager MAY support one or multiple of the following operators:
+  * Greater Than: `gt`
+  * Greater Than or Equal: `ne`
+  * Less Than: `le`
+  * Less Than or Equal: `le`
 
 * The Service Manager SHOULD support label queries for labels that are visible to the current user.
 * A label query condition is met if the query value matches at least one value in the labels value array.
@@ -538,6 +592,8 @@ The `service offerings` API is described [here](#service-offering-management).
 
 Definition of the semantics behind the resource name can be found in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#terminology).
 
+A Service Offering has two unique keys. There is the internal service ID (`service_offering_id`) which is generated by the Service Manager when a broker is registered. If multiple brokers register the same service, each Service Offering gets a different internal service ID. And there is the pair of broker ID (`borker_id`) and service ID (`service_id`). This service ID is the ID provided in the catalog of a broker. Because multiple brokers can provide the same service and service ID, the broker ID is required to specify the Service Offering.
+
 ### Service Plans
 
 The `service plans` API is described [here](#service-plan-management).
@@ -626,12 +682,13 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | name* | string | Platform name. |
 | type* | string | Type of the platform. |
 | description | string | Platform description. |
-| credentials* | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST be used to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
+| description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
+| credentials | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST be used to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
 | created_at | string | The time of the creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
 ### Listing Platforms
 
@@ -807,12 +864,13 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 | id* | string | ID of the service broker. |
 | name* | string | Name of the service broker. |
 | description | string | Description of the service broker. |
+| description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
 | broker_url* | string | URL of the service broker. |
 | created_at | string | The time of creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the service broker. MAY be an empty object. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
 ### Listing Service Brokers
 
@@ -909,6 +967,10 @@ Using the `force` flag MAY leave service bindings and service instances in the d
 
 Creation of a `service instance` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
 
+There are two ways to specify the Service Offering of the to be provisioned Service Instance:
+1. The client specifies the service ID (`service_id`) as provided by the catalog. If the current user has access to more than one broker that provides this service, the user MUST also provide the broker ID (`broker_id`). If the broker ID is necessary and not specified, the Service Manager returns an appropriate [error](#errors).
+2. The client provides the Service Manager internal ID (`service_offering_id`) of the Service Offering. This ID is unique across Service Brokers even if multiple brokers provide the same service with the same Service Offering ID.
+
 #### Route
 
 `POST /v1/service_instances`
@@ -937,7 +999,9 @@ Creation of a `service instance` resource entity MUST comply with [creating a re
 | Request field | Type | Description |
 | -------------- | ---- | ----------- |
 | name* | string | A non-empty instance name. |
-| service_id* | string | MUST be the ID of a Service Offering. |
+| service_offering_id | string | The internal ID of a Service Offering. If this field is set, the `service_id` field MUST NOT be present. |
+| broker_id | string | The ID of a Service Broker.  |
+| service_id | string | The ID of a Service Offering as provided by the catalog. If this field is set the `service_offering_id` field MUST NOT be present. If this field is ambiguous because multiple Service Brokers provide this service, the `broker_id` field MUST be set |
 | plan_id* | string | MUST be the ID of a Service Plan. |
 | parameters | object | Configuration parameters for the Service Instance. |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
@@ -975,8 +1039,11 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   "name": "my-service-instance",
   "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
   "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
+  "service_name": "my-service",
   "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+  "plan_name": "small-plan",
   "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
+  "platform_name": "cluster-4567", 
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
@@ -995,10 +1062,14 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | -------------- | ---- | ----------- |
 | id* | string | Service Instance ID. | 
 | name* | string | Service Instance name. |
-| broker_id* | string | MUST be the ID of Service Broker that manages this instance. |
-| service_id* | string | MUST be the ID of a Service Offering. |
-| plan_id* | string | MUST be the ID of a Service Plan. |
-| platform_id* | string | MUST be the ID of the platform that owns this instance or `null` if the Service Manager owns it. |
+| service_offering_id* | string | The internal ID of the Service Offering. |
+| broker_id* | string | The ID of Service Broker that manages this instance. |
+| service_id* | string | The ID of a Service Offering as provided by the catalog. |
+| service_name | string | The name of a Service Offering. |
+| plan_id* | string | The ID of the Service Plan. |
+| plan_name | string | The name of the Service Plan. |
+| platform_id* | string | ID of the platform that owns this instance or `null` if the Service Manager owns it. |
+| platform_name | string |The name of the platform that owns this instance or `null` if the Service Manager owns it. |
 | dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
 | parameters | object |	Configuration parameters for the Service Instance. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
@@ -1006,7 +1077,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | updated_at | string | The time of the last update in ISO-8601 format. |
 | orphan | boolean | If `true` the Service Instance is an orphan and will eventually be removed by the Service Manager. If `false` the Service Instance is useable. This field MUST only be present, if the Service Instance has been created by the Service Manager. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
 ### Listing Service Instances
 
@@ -1032,6 +1103,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
     {  
       "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-instance",
+      "service_offering_id": "84ea69e4-61bf-4478-a40a-c736c683d693",
       "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
       "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
       "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
@@ -1169,6 +1241,9 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
   "name": "my-service-binding",
   "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
+  "service_offering_id": "84ea69e4-61bf-4478-a40a-c736c683d693",
+  "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
+  "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
   "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
   "binding": {
@@ -1193,19 +1268,25 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 
 | Response field | Type | Description |
 | -------------- | ---- | ----------- |
-| id* | string | Service Binding ID. | 
-| name* | string | Service Binding name. |
-| broker_id* | string | MUST be the ID of Service Broker that manages this binding. |
-| service_instance_id* | string | Service Instance ID. |
-| platform_id* | string | MUST be the ID of the platform that owns this instance or `null` if the Service Manager owns it. |
-| binding* | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
+| id* | string | The Service Binding ID. | 
+| name* | string | The Service Binding name. |
+| service_offering_id* | string | The internal ID of the Service Offering. |
+| broker_id* | string | The ID of Service Broker that manages this instance. |
+| service_id* | string | The ID of a Service Offering as provided by the catalog. |
+| service_name | string | The name of a Service Offering. |
+| plan_id* | string | The ID of the Service Plan. |
+| plan_name | string | The name of the Service Plan. |
+| service_instance_id* | string | The Service Instance ID. |
+| platform_id* | string | ID of the platform that owns this binding or `null` if the Service Manager owns it. |
+| platform_name | string |The name of the platform that owns this binding or `null` if the Service Manager owns it. |
+| binding | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
 | parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
 | orphan | boolean | If `true` the Service Binding is an orphan and will eventually be removed by the Service Manager. If `false` the Service Binding is useable. This field MUST only be present, if the Service Binding has been created by the Service Manager. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
 ### Listing Service Bindings
 
@@ -1312,6 +1393,8 @@ If the `force` flag is used, there is no guarantee that the service binding has 
 
 As per the OSB API terminology a service offering represents the advertisement of a service that a service broker supports. Service Manager MUST expose a management API of the service offerings offered by the registered service brokers.
 
+The Service Manager MAY add, remove, or change Service Offerings details. For example, the Service Manager MAY replace the `description` field value with a translation based on the `Accept-Language` HTTP request header. It MAY also add a [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
+
 ### Fetching a Service Offering
 
 Fetching of a `service offering` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
@@ -1343,16 +1426,16 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
     "bindings_retrievable": false,
     ...
   },
+  "labels": {
+  },
   "created_at": "2016-06-08T16:41:22Z",
   "updated_at": "2016-06-08T16:41:26Z",
-  "labels": {
-  }
 }
 ```
 
 | Response field | Type | Description |
 | -------------- | ---- | ----------- |
-| id* | string | Service Offering ID. | 
+| id* | string | Internal Service Offering ID. | 
 | name* | string | Service Offering name. |
 | broker_id* | string | The ID of the broker that provides this Service Offering. | 
 | service* | object | The Service Offering object as provided by the broker, but without the `plans` field. |
@@ -1360,7 +1443,7 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
 | created_at | string | The time of the creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
 ### Listing Service Offerings
 
@@ -1408,6 +1491,8 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 
 As per the OSB API terminology, a service plan is representation of the costs and benefits for a given variant of the service, potentially as a tier that a service broker offers. Service Manager MUST expose a management API of the service plans offered by services of the registered service brokers.
 
+The Service Manager MAY add, remove, or change Service Plan details. For example, the Service Manager MAY replace the `description` field value with a translation based on the `Accept-Language` HTTP request header. It MAY also add a [`description--i18n` field](#localization) or do other changes. That is, Service Plan object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
+
 ### Fetching a Service Plan
 
 Fetching of a `service plan` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
@@ -1426,7 +1511,7 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 
 ```json
 {  
-  "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
+  "id": "b8d6f695-7c67-48c2-be45-d3f651c26a75",
   "name": "plan-name",
   "broker_id": "7905b30e-cd9e-4d8a-adc8-1f644e49dae5",
   "plan": {
@@ -1466,15 +1551,15 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 
 | Response field | Type | Description |
 | -------------- | ---- | ----------- |
-| id* | string | Service Plan ID. | 
+| id* | string | Internal Service Plan ID. | 
 | name* | string | Service Offering name. |
-| broker_id* | string | The ID of the broker that provides this Service Plan. | 
+| broker_id* | string | The ID of the broker that provides this Service Plan. |
 | plan* | object | The Service Plan object as provided by the broker. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation in ISO-8601 format. |
 | updated_at | string | The time of the last update in ISO-8601 format. |
 
-\* Fields with an asterisk are REQUIRED.
+\* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
 ### Listing Service Plans
 
@@ -1649,7 +1734,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
 ## Labels Object
 
-A label is a key-value pair that can be attached to a resource. The key MUST be a string. The value MUST be a non-empty array of unique strings. Label keys and values MUST be compared in a case-sensitive way. Service Manager resources MAY have any number of labels represented by the `labels` field.
+A label is a key-value pair that can be attached to a resource. The key MUST be a string. The value MUST be a non-empty array of unique strings. Label keys and values MUST be compared in a case-sensitive way. Service Manager resources MAY have any number of labels represented by the `labels` field. The set of labels is not ordered in any way.
 
 This allows querying (filtering) on the `List` API of the resource based on multiple labels. The Service Manager MAY
 attach additional labels to the resources and MAY restrict updates and deletes for some of the labels.
@@ -1676,7 +1761,7 @@ Example of a Resource Entity that has labels:
 
 ### Naming Labels
 
-Label names SHOULD only consist of alphanumeric characters, periods, hyphens, underscores and MUST NOT contain any white spaces and equals characters ('`=`').
+Label names SHOULD only consist of alphanumeric characters, periods, hyphens, underscores and MUST NOT contain any white spaces, equals characters ('`=`'), or commas ('`,`').
 Labels names SHOULD NOT be longer than 100 characters. The Service Manager MAY reject labels with longer names. 
 
 ### Patching Labels
@@ -1696,7 +1781,7 @@ The PATCH APIs of the resources that support labels MUST support update of label
 | Operation | Description |
 | --------- | ----------- |
 | add | Adds a new label or new values. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, any new values MUST be added to the label. If any of the `values` already exist in the label, they MUST be ignored silently. Any existing values MUST remain unchanged. `values` field is REQUIRED. |
-| set b| Adds a new label or overwrites an existing one. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, all label values MUST be replaced with the given `values`. `values` field is REQUIRED. |
+| set | Adds a new label or overwrites an existing one. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, all label values MUST be replaced with the given `values`. `values` field is REQUIRED. |
 | remove | Removes a label or some of its values. If a label with the given `key` does not exist, the operation MUST be ignored silently. Otherwise, the given `values` MUST be removed from the specified label. Any existing label values not specified in `values`, MUST remain unchanged. If any of the `values` are not present in the label, they MUST be ignored silently. If the label remains with no values, it MUST be removed completely. If `values` field is not provided, the whole label with all its values MUST be removed. |
 
 All operations in one request MUST be performed as one atomic change. Either all or none of them are performed.
@@ -1769,6 +1854,7 @@ use these error codes for the specified failure scenarios.
 | InvalidFieldQuery | 400 | The field query is invalid. | Retry with corrected field query. |
 | UnsupportedFieldQuery | 400 | The field query contains a field that is not queryable. | |
 | InvalidMaxItems | 400 | The `max_items` parameter is not 0 or a positive number. | Retry with no or a valid `max_items` parameter. |
+| AmbiguousServiceID | 400 | The service ID is ambiguous. | Add also the broker ID to the request. |
 | Unauthorized | 401 | Unauthenticated request. | Provide credentials or a token. |
 | Forbidden | 403 | The current user has no permission to execute the operation. | Retry operation with a different user. | 
 | NotFound | 404 | Entity not found or not visible to the current user. | |
