@@ -4,6 +4,7 @@
 
 - [Overview](#overview)
 - [Terminology and Definitions](#terminology-and-definitions)
+- [Data Formats](#data-formats)
 - [Localization](#localization)
 - [Asynchronous Operations](#asynchronous-operations)
 - [General Resource Management](#general-resource-management)
@@ -57,7 +58,6 @@
 - [Status Object](#status-object)
 - [Labels Object](#labels-object)       
 - [Errors](#errors)
-- [Content Type](#content-type)
 - [Mitigating Orphans](#mitigating-orphans)
 
 ## Overview
@@ -76,9 +76,19 @@ This document inherits the terminology from the Service Manager specification an
 
 Additionally, the follow terms and concepts are use:
 
-* *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 100 characters and SHOULD only consist of alphanumeric characters, periods, and hyphens. Using a GUID is RECOMMENDED.
+* *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 50 characters and SHOULD only consist of alphanumeric characters, periods, and hyphens. Using a GUID is RECOMMENDED.
 * *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods, hyphens, and no white spaces. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
 * *Description*: A description is a human readable string, which SHOULD NOT exceed 255 characters. If a description is longer than 255 characters, the Service Manager MAY silently truncate it.
+
+## Data Formats
+
+The data format for all Service Manager endpoints is [JSON](https://json.org). That implies that all strings are Unicode strings.
+
+The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[.mmm]`
+
+### Content Type
+
+All requests and responses defined in this specification with accompanying bodies SHOULD contain a `Content-Type` HTTP header set to `application/json`. If the `Content-Type` is not set, Service Brokers and Platforms MAY still attempt to process the body. If a Service Broker rejects a request due to a mismatched `Content-Type` or the body is unprocessable it SHOULD respond with `400 Bad Request`.
 
 ## Localization
 
@@ -118,7 +128,7 @@ This specification does not define any permission model. Authorization checks ar
 
 * If a user is allowed to update or delete an entity, the user SHOULD also be allowed to fetch and list the entity and to see the status of the entity.
 * If a user is allowed to see an entity, the user SHOULD have access to *all* fields and labels of the entity.
-* The Service Manager MAY restrict write access to some fields and labels. There is no way for the client to find out in advance which data can be updated.
+* The Service Manager MAY restrict write access to some fields and labels. There is no way for the client to find out in advance which data can be set and updated.
 
 ## Asynchronous Operations
 
@@ -127,7 +137,7 @@ The Service Manager MAY decide to execute operations synchronously. In this case
 
 ### Concurrent Mutating Requests
 
-Service Manager MAY NOT support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and ID `:resource_id` is currently being created, updated, patched, or deleted and this operation is in progress, then other mutating operation MAY fail on the resource of type `:resource_type` and ID `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [errors object](#errors).
+Service Manager MAY NOT support concurrent mutating operations on the same resource entity. If a resource with type `:resource_type` and ID `:resource_id` is currently being created, updated, patched, or deleted and this operation is in progress, then other mutating operation MAY fail on the resource of type `:resource_type` and ID `:resource_id` until the one that is currently in progress finishes. If the Service Manager receives a concurrent mutating request that it currently cannot handle due to another operation being in progress for the same resource entity, the Service Manager MUST reject the request and return HTTP status `422 Unprocessable Entity` and a meaningful [error](#errors).
 The client MAY retry the request after the currently running operation has finished.
 
 ## General Resource Management
@@ -214,7 +224,7 @@ In case of an ongoing asynchronous update or patch of the resource entity, this 
 
 ### Listing All Resource Entities of a Resource Type
 
-Returns all resource entities of this resource type.
+Returns all or a subset of the resource entities of this resource type.
 
 #### Request
 
@@ -233,47 +243,83 @@ This endpoint MUST also support the `fields` and `labels` query parameters that 
 
 There are two types of filtering.
 
-1. Filtering based on labels.
-2. Filtering based on resource fields (these are fields that are part of the resource's JSON representation).
+1. Filtering based on top-level resource fields.
+2. Filtering based on labels.
 
-Filtering can be controlled by the following query string parameters:
+Filtering can be controlled by the following query parameters:
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| labelQuery | string | Filter the response based on the label query. Only items that have labels matching the provided label query will be returned. If present, MUST be a non-empty string. |
-| fieldQuery | string | Filter the response based on the field query. Only items that have fields matching the provided label query will be returned. If present, MUST be a non-empty string. |
+| fieldQuery | string | Filters the response based on the field query. Only items that have field values matching the provided field query will be returned. If present, MUST be a non-empty string. |
+| labelQuery | string | Filters the response based on the label query. Only items that have label values matching the provided label query will be returned. If present, MUST be a non-empty string. |
 
+  Field query example: `GET /v1/service_instances?fieldQuery=service_plan_id+eq+'bvsded31-c303-123a-aab9-8crar19e1218'` would return all service instances with a service plan ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
 
-  Example: `GET /v1/service_instances?labelQuery=context_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a label `context_id` that has a value `bvsded31-c303-123a-aab9-8crar19e1218`.
-
-  Example: `GET /v1/service_instances?fieldQuery=service_plan_id%3Dbvsded31-c303-123a-aab9-8crar19e1218` would return all service instances with a service plan ID that equals `bvsded31-c303-123a-aab9-8crar19e1218`.
-
+  Label query example: `GET /v1/service_instances?labelQuery=context_id+eq+'ad8cddb0-4679-43bf-89bc-357e9a638f30'` would return all service instances with a label `context_id` that has a value `ad8cddb0-4679-43bf-89bc-357e9a638f30`.
 
 ##### Filter Syntax and Rules
 
-:warning: TODO
+The Service Manager SHOULD support field queries on top-level fields with string and boolean values and MAY support fields with integer and date-time values. The interpretation of other value types or object is implementation specific. In general, the Service Manager SHOULD reject field queries for all other value types.
 
-* The Service Manager SHOULD support field queries on top-level fields with string, boolean, and integer values. The interpretation of other value types is implementation specific. In general, the Service Manager SHOULD reject field queries for all other value types.
-* The Service Manage SHOULD support queries on all fields that hold a name or an ID. These fields are usually named '`id`' or '`name`' or the field name ends with '`_id`'.
-* The Service Manager MAY also support field queries on nested fields. If so, the path to the field MUST be separated by a dot ('`.`'). Elements of an array are addressed with the index after the field name in square brackets('`[]`'). For example, a path could look like this: `credentials[0].basic.username`.
+The Service Manager MAY also support field queries on nested fields. If so, the path to the field MUST be separated by a dot ('`.`'). Elements of an array are addressed with the index after the field name in square brackets('`[]`'). For example, a path could look like this: `credentials[0].basic.username`.
 
-* The Service Manager MUST support the following operators:
-  * Equals: `eq`
-  * Not equals: `ne`
-  * In: `in`
-  * Not In:  `notin`
-  * And: `and`
+A BNF-like definition of a query looks like this:
+```
+query := predicate | predicate "and" predicate
+predicate := comparison_predicate | in_predicate
 
-* Additionally, the Service Manager MAY support one or multiple of the following operators:
-  * Greater Than: `gt`
-  * Greater Than or Equal: `ne`
-  * Less Than: `le`
-  * Less Than or Equal: `le`
+comparison_predicate := (field | label) comp_op literal
+comp_op := "eq" | "ne" | "gt" | "lt" | "ge" | "le"
+  
+in_predicate := (field | label) ("in" | "notin") "(" literals ")"
+  
+field := !! field name or field path
+label := !! label name
 
-* The Service Manager SHOULD support label queries for labels that are visible to the current user.
-* A label query condition is met if the query value matches at least one value in the labels value array.
+literals := literal ["," literals]
+literal := string_literal | boolean_literal | integer_literal | datetime_literal | "null"
+```
 
-* Label and field queries MAY be combined. The returned list MUST only contain entries that match both queries.
+  * `string_literal`: String values  MUST be enclosed in single quotes ('`'`'). Single quotes in strings MUST be encoded with another single quote ('`''`').
+  * `boolean_literal`: Boolean values MUST be either '`true`' or '`false`' and MUST NOT be enclosed in quotes. 
+  * `integer_literal`: Integer values MUST be only consist of digits with one optional leading '`+`' or '`-`' sign.
+  * `datetime_literal`: Date-time values MUST follow ISO 8601 and MUST NOT be enclosed in quotes. See also the [Data Formats](#data-formats) section.
+  * "`null`": In a field query, this is this the `null` value. In a label query, it checks the existence of a label. This value MUST only be use with the `eq` or `ne` operands.
+
+The Service Manager MUST support the following operators:
+
+| Operator | Field Query | Label Query |
+| -------- | ----------- | ----------- |
+| eq | Evaluates to true if the field value matches the literal. False otherwise. | Evaluates to true if the label exists and one label value matches the literal. False otherwise. |
+| eq null | Evaluates to true if the field value is `null`. False otherwise. | Evaluates to true if the label doesn't exist. False otherwise. |
+| ne | Evaluates to true if the field value does not matches the literal. False otherwise. | Evaluates to true if the label exists and no label value matches the literal. False otherwise. |
+| ne null | Evaluates to true if the field value is not `null`. False otherwise. | Evaluates to true if the label exists. False otherwise. |
+| in | Evaluates to true if the field value matches at least one value in the list of literals. False otherwise. | Evaluates to true if the label exists and at least a label value matches one value in the list of literals. False otherwise. |
+| notin | Evaluates to true if the field value does not match any value in the list of literals. False otherwise. | Evaluates to true if the label exists and no label value matches any value in the list of literals. False otherwise. |
+ | and |  Evaluates to true if both the left and right operands evaluate to true. False otherwise. ||
+
+Additionally, the Service Manager MAY support one or multiple of the following operators for field queries:
+
+| Operator | Field Query |
+| -------- | ----------- |
+| gt | Evaluates to true if the field value is greater than the literal. False otherwise. |
+| ge | Evaluates to true if the field value is greater or equal than the literal. False otherwise. |
+| lt | Evaluates to true if the field value is less than the literal. False otherwise. |
+| le | Evaluates to true if the field value is less or equal than the literal. False otherwise. |
+
+Label and field queries MAY be combined. The returned list MUST only contain entries that match both queries.
+
+##### Query examples:
+
+* List all bindings of the plan "small" or "medium" of service "mysql" provided by the broker with the ID "f85bcbd3-6c8b-43f0-a019-7f0a1ec5dba4":  
+  Field query: `broker_id eq 'f85bcbd3-6c8b-43f0-a019-7f0a1ec5dba4' and service_name eq 'mysql' and plan_name in ('small', 'medium')`
+
+* List all instances of service "postgresql" that are managed by the Service Manager and that are not orphans:  
+  Field query: `platform_id eq null and service_name eq 'postgresql' and orphan ne true`
+
+* List all platforms of type "kubernetes" that are labeled as "dev" platform (assuming there is a label called "purpose"):  
+  Field query: `type eq 'kubernetes'`  
+  Label query: `purpose eq 'dev'`
 
 #### Paging Parameters
 
@@ -1864,10 +1910,6 @@ use these error codes for the specified failure scenarios.
 | AssociatedEntityConflict | 409 | The entity cannot be deleted because an associated entity exists. | Remove the associated entity or retry the delete operation with the `cascade` or `force` flag. |
 | Gone | 410 | There is no data about the operation anymore. | Don't retry. |
 | ConcurrentOperation | 422 | The entity is already processed by another operation. | Retry after the currently running operation is finished. |
-
-## Content Type
-
-All requests and responses defined in this specification with accompanying bodies SHOULD contain a `Content-Type` header set to `application/json`. If the `Content-Type` is not set, Service Brokers and Platforms MAY still attempt to process the body. If a Service Broker rejects a request due to a mismatched Content-Type or the body is unprocessable it SHOULD respond with `400 Bad Request`.
 
 ## Mitigating Orphans
 
