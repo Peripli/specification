@@ -92,12 +92,17 @@ All requests and responses defined in this specification with accompanying bodie
 
 ## Localization
 
-Many entities and errors contain a human readable descriptions. (The description field is called `description` in most cases.) If a clients provides an `Accept-Language` HTTP header and the Service Manager has a localized, matching description string, it SHOULD provide the localized description. If no matching description is available, the Service Manager MUST fall back to a default description.
+Many entities and errors contain human readable display names and descriptions. (The display name field is often called `displayName`. The description field is called `description` in most cases.)  
+ If a clients provides an `Accept-Language` HTTP header and the Service Manager has a localized, matching display name or description string, it SHOULD provide the localized string. If no matching display name and/or description is available, the Service Manager MUST fall back to a default value, which SHOULD NOT be an empty string.
 
-Whenever a client provides a value for a `description` field, for example when an entity is created, updated or patched, the client MAY also provide an additional object called `description--i18n`. This object contains translations of the default description that is provided in the `description` field. A client MUST NOT provide a  `description--i18n` object without an accompanied `description` field. A `description` field without an accompanied `description--i18n` object, removes existing all description translations.
+Whenever a client provides a value for a `displayName` or `description` field, for example when an entity is created, updated or patched, the client MAY also provide an additional object called `displayName--i18n` respectively `description--i18n`. These objects contains translations of the default display name and description that is provided in the `displayName` respectively `description` field.
 
-The keys within the `description--i18n` object SHOULD be either ISO 639-1 language codes (for example "de") or ISO 639-1 language codes followed by a hyphen ('`-`') followed by a ISO 3166 country code (for example "de-CH").
-The values SHOULD be non-empty translations of the `description` field value and MUST follow the same rules and length restrictions of the `description` field.
+A client MUST NOT provide a `displayName--i18n` object without an accompanied `displayName` field. A `displayName` field without an accompanied `displayName--i18n` object, removes existing all display name translations.
+
+A client MUST NOT provide a `description--i18n` object without an accompanied `description` field. A `description` field without an accompanied `description--i18n` object, removes existing all description translations.
+
+The keys within the `displayName--i18n` or `description--i18n` object SHOULD be either ISO 639-1 language codes (for example "de") or ISO 639-1 language codes followed by a hyphen ('`-`') followed by a ISO 3166 country code (for example "de-CH"). A key MUST NOT be empty or only contain white spaces.  
+The values SHOULD be non-empty translations of the `displayName` respectively `description` field value and MUST follow the same rules and length restrictions of the `displayName` field respectively  the `description` field.
 
 ```json
 {
@@ -111,7 +116,7 @@ The values SHOULD be non-empty translations of the `description` field value and
 }
 ```
 
-The Service Manager MAY store and use all or a subset of the entries in the `description--i18n` object or MAY ignore this object completely.
+The Service Manager MAY store and use all or a subset of the entries in the `displayName--i18n` and `description--i18n` objects or MAY ignore these objects completely.
 
 
 ## Authentication an Authorization
@@ -318,7 +323,7 @@ Label and field queries MAY be combined. The returned list MUST only contain ent
   Field query: `platform_id eq null and service_name eq 'postgresql' and orphan ne true`
 
 * List all platforms of type "kubernetes" that are labeled as "dev" platform (assuming there is a label called "purpose"):  
-  Field query: `type eq 'kubernetes'`  
+  Field query: `type eq 'kubernetes'`  
   Label query: `purpose eq 'dev'`
 
 #### Paging Parameters
@@ -683,6 +688,7 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 | id | string | ID of the platform. If provided, MUST be unique across all platforms registered with the Service Manager. If not provided, the Service Manager generates an ID. |
 | name* | string | A CLI-friendly name of the platform. MUST be unique across all platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
+| displayName | string | A human readable display name of the platform. |
 | description | string | A description of the platform. |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 
@@ -727,11 +733,13 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | id* | string | ID of the platform. |
 | name* | string | Platform name. |
 | type* | string | Type of the platform. |
+| displayName | string | A human readable display name of the platform. |
+| displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | Platform description. |
-| description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
+| description--i18n | [description translations](#localization) | See the [Localization](#localization) section. |
 | credentials | [credentials](#credentials-object) | A JSON object that contains credentials which the service broker proxy (or the platform) MUST be used to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling platform from these credentials. |
-| created_at | string | The time of the creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
@@ -851,6 +859,7 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 ```json
 {
     "name": "service-broker-name",
+    "displayName": "My Service Broker",
     "description": "Service broker providing some valuable services.",
     "broker_url": "http://service-broker.example.com",
     "credentials": {
@@ -868,7 +877,10 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | name* | string | A CLI-friendly name of the service broker. The Service Manager MAY change this name to make it unique across all registered brokers. MUST be a non-empty string. |
+| displayName | string | A human readable display name of the platform. |
+| displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | A description of the service broker. |
+| description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
 | broker_url* | string | MUST be a valid base URL for an application that implements the OSB API. |
 | credentials* | [credentials](#credentials-object) | MUST be a valid credentials object which will be used to authenticate against the service broker. |
 | labels | collections of [labels](#labels-object) | Additional data associated with the service broker. |
@@ -895,6 +907,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 {
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "name": "service-broker-name",
+    "displayName": "My Service Broker",
     "description": "Service broker providing some valuable services.",
     "created_at": "2016-06-08T16:41:26Z",
     "updated_at": "2016-06-08T16:41:26Z",
@@ -909,11 +922,13 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 | -------------- | ---- | ----------- |
 | id* | string | ID of the service broker. |
 | name* | string | Name of the service broker. |
+| displayName | string | A human readable display name of the platform. |
+| displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | Description of the service broker. |
 | description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
 | broker_url* | string | URL of the service broker. |
-| created_at | string | The time of creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the service broker. MAY be an empty object. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
@@ -1119,8 +1134,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
 | parameters | object |	Configuration parameters for the Service Instance. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
-| created_at | string | The time of the creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | orphan | boolean | If `true` the Service Instance is an orphan and will eventually be removed by the Service Manager. If `false` the Service Instance is useable. This field MUST only be present, if the Service Instance has been created by the Service Manager. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
@@ -1184,6 +1199,9 @@ Updating of a `service instance` resource entity MUST comply with [updating a re
 
 See [Provisioning a Service Instance](#provisioning-a-Service-instance).
 
+**Note:** Updating parameters works as described in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#updating-a-service-instance) in section "*Updating a Service Instance*".
+
+
 ### Patching a Service Instance
 
 Patching of a `service instance` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
@@ -1198,9 +1216,7 @@ Patching of a `service instance` resource entity MUST comply with [patching a re
 
 See [Provisioning a Service Instance](#provisioning-a-Service-instance) and [Patching Labels](#patching-labels).
 
-:warning: TODO
-
-**Note:** Patching parameters works the same way as patching labels.
+**Note:** Patching parameters works as described in the [OSB specification](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/spec.md#updating-a-service-instance) in section "*Updating a Service Instance*".
 
 ### Deleting a Service Instance
 
@@ -1328,8 +1344,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | binding | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
 | parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
-| created_at | string | The time of the creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | orphan | boolean | If `true` the Service Binding is an orphan and will eventually be removed by the Service Manager. If `false` the Service Binding is useable. This field MUST only be present, if the Service Binding has been created by the Service Manager. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
@@ -1439,7 +1455,7 @@ If the `force` flag is used, there is no guarantee that the service binding has 
 
 As per the OSB API terminology a service offering represents the advertisement of a service that a service broker supports. Service Manager MUST expose a management API of the service offerings offered by the registered service brokers.
 
-The Service Manager MAY add, remove, or change Service Offerings details. For example, the Service Manager MAY replace the `description` field value with a translation based on the `Accept-Language` HTTP request header. It MAY also add a [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
+The Service Manager MAY add, remove, or change Service Offerings details. For example, the Service Manager MAY replace the `metadata.displayName` or `description` field value with translations based on the `Accept-Language` HTTP request header. It MAY also add a [`metadata.displayName--i18n` field](#localization) or [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
 
 ### Fetching a Service Offering
 
@@ -1464,8 +1480,10 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
     "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
     "name": "my-service-offering",
     "description": "A service offering description.",
-    "displayName": "postgres",
-    "longDescription": "A service offering long description.",
+    "metadata": {
+      "displayName": "postgres",
+      "longDescription": "A service offering long description."
+    },
     "bindable": true,
     "plan_updateable": false,
     "instances_retrievable": false,
@@ -1486,8 +1504,8 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
 | broker_id* | string | The ID of the broker that provides this Service Offering. | 
 | service* | object | The Service Offering object as provided by the broker, but without the `plans` field. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
-| created_at | string | The time of the creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
@@ -1514,15 +1532,17 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
         "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
         "name": "my-service-offering",
         "description": "A service offering description.",
-        "displayName": "display-name",
-        "longDescription": "A service offering long description.",
+        "metadata": {
+          "displayName": "display-name",
+          "longDescription": "A service offering long description."
+        },
         "service_broker_id": "0e7250aa-364f-42c2-8fd2-808b0224376f",
         "bindable": true,
         "plan_updateable": false,
         "instances_retrievable": false,
         "bindings_retrievable": false,
         ...
-      }
+      },
       "created_at": "2016-06-08T16:41:22Z",
       "updated_at": "2016-06-08T16:41:26Z",
       "labels": {
@@ -1537,7 +1557,7 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 
 As per the OSB API terminology, a service plan is representation of the costs and benefits for a given variant of the service, potentially as a tier that a service broker offers. Service Manager MUST expose a management API of the service plans offered by services of the registered service brokers.
 
-The Service Manager MAY add, remove, or change Service Plan details. For example, the Service Manager MAY replace the `description` field value with a translation based on the `Accept-Language` HTTP request header. It MAY also add a [`description--i18n` field](#localization) or do other changes. That is, Service Plan object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
+The Service Manager MAY add, remove, or change Service Plan details. For example, the Service Manager MAY replace the `metadata.displayName` or `description` field value with translations based on the `Accept-Language` HTTP request header. It MAY also add a [`metadata.displayName--i18n` field](#localization) or [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
 
 ### Fetching a Service Plan
 
@@ -1567,7 +1587,6 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
     "description": "This a plan description.",
     "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
     "extra": null,
-    "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
     "public": true,
     "active": true,
     "bindable": true,
@@ -1602,8 +1621,8 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 | broker_id* | string | The ID of the broker that provides this Service Plan. |
 | plan* | object | The Service Plan object as provided by the broker. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
-| created_at | string | The time of the creation in ISO-8601 format. |
-| updated_at | string | The time of the last update in ISO-8601 format. |
+| created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
@@ -1634,7 +1653,6 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
         "description": "This is a plan description.",
         "service_id": "1ccab853-87c9-45a6-bf99-603032d17fe5",
         "extra": null,
-        "unique_id": "1bc2884c-ee3d-4f82-a78b-1a657f79aeac",
         "public": true,
         "active": true,
         "bindable": true,
@@ -1746,8 +1764,8 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 | operation_id* | string | The ID of the operation. |
 | state* | string | Valid values are `in progress`, `succeeded`, and `failed`. While `"state": "in progress"`, the Platform SHOULD continue polling. A response with `"state": "succeeded"` or `"state": "failed"` MUST cause the Platform to cease polling. |
 | description | string | A user-facing message that can be used to tell the user details about the status of the operation. |
-| start_time* | string | The time of operation start in ISO-8601 format. |
-| end_time | string | The time of operation end in ISO-8601 format. This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
+| start_time* | string | The time of operation start [in ISO 8601 format](#data-formats). |
+| end_time | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
 | entity_id | string | The ID of the entity. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
 | error | error object | An error object describing why the operation has failed. This field SHOULD be present if `"state": "failed"` and MUST NOT be present for other states. |
 
