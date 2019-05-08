@@ -89,7 +89,7 @@ Additionally, the follow terms and concepts are use:
 
 The data format for all Service Manager endpoints is [JSON](https://json.org). That implies that all strings are Unicode strings.
 
-The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[.mmm]`
+The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[Z|(+|-)hh:mm]`]
 
 ### Content Type
 
@@ -423,7 +423,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 201 Created | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
+| 200 OK | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
 | 202 Accepted | The initial [Status Object](#status-object). |
 | 4xx or 5xx | An [Error Object](#errors). |
 
@@ -470,7 +470,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 201 Created | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
+| 200 OK | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
 | 202 Accepted | The initial [Status Object](#status-object). |
 | 4xx or 5xx | An [Error Object](#errors). |
 
@@ -694,7 +694,9 @@ Creation of a `platform` resource entity MUST comply with [creating a resource e
 | name* | string | A CLI-friendly name of the Platform. MUST be unique across all Platforms registered with the Service Manager. MUST be a non-empty string. |
 | type* | string | The type of the Platform. MUST be a non-empty string. SHOULD be one of the values defined for `platform` field in OSB [context](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object). |
 | displayName | string | A human readable display name of the Platform. |
+| displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | A description of the Platform. |
+| description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 
 \* Fields with an asterisk are REQUIRED
@@ -884,7 +886,7 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | name* | string | A CLI-friendly name of the service broker. The Service Manager MAY change this name to make it unique across all registered brokers. MUST be a non-empty string. |
-| displayName | string | A human readable display name of the Platform. |
+| displayName | string | A human readable display name of the service broker. |
 | displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | A description of the service broker. |
 | description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
@@ -929,7 +931,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 | -------------- | ---- | ----------- |
 | id* | string | ID of the service broker. |
 | name* | string | Name of the service broker. |
-| displayName | string | A human readable display name of the Platform. |
+| displayName | string | A human readable display name of the service broker. |
 | displayName--i18n | [displayName translations](#localization) | See the [Localization](#localization) section. |
 | description | string | Description of the service broker. |
 | description--i18n | [description translations](#localization) | See the [Localization](#localization) section |
@@ -1482,6 +1484,8 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
   "id": "6310b226-f71d-4a9c-b4d6-62c14043cadf",
   "name": "my-service-offering",
   "broker_id": "7905b30e-cd9e-4d8a-adc8-1f644e49dae5",
+  "service_id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+  "service_name": "my-service-offering",
   "service": {
     "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
     "name": "my-service-offering",
@@ -1507,7 +1511,9 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
 | -------------- | ---- | ----------- |
 | id* | string | Internal Service Offering ID. | 
 | name* | string | Service Offering name. |
-| broker_id* | string | The ID of the broker that provides this Service Offering. | 
+| broker_id* | string | The ID of the broker that provides this Service Offering. |
+| service_id* | string | The ID of the Service Offering as provided by the catalog. |
+| service_name* | string | The name of the Service Offering. |
 | service* | object | The Service Offering object as provided by the broker, but without the `plans` field. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
@@ -1534,6 +1540,8 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
       "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-offering",
       "broker_id": "7905b30e-cd9e-4d8a-adc8-1f644e49dae5",
+      "service_id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+      "service_name": "my-service-offering",
       "service": {
         "id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
         "name": "my-service-offering",
@@ -1584,8 +1592,11 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 ```json
 {  
   "id": "b8d6f695-7c67-48c2-be45-d3f651c26a75",
-  "name": "plan-name",
   "broker_id": "7905b30e-cd9e-4d8a-adc8-1f644e49dae5",
+  "service_id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+  "service_name": "my-service-offering",
+  "plan_id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
+  "plan_name": "plan-name",
   "plan": {
     "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
     "name": "plan-name",
@@ -1625,6 +1636,10 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 | id* | string | Internal Service Plan ID. | 
 | name* | string | Service Offering name. |
 | broker_id* | string | The ID of the broker that provides this Service Plan. |
+| service_id* | string | The ID of the Service Offering as provided by the catalog. |
+| service_name* | string | The name of the Service Offering. |
+| plan_id* | string | The ID of the Service Plan. |
+| plan_name* | string | The name of the Service Plan. |
 | plan* | object | The Service Plan object as provided by the broker. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
@@ -1651,7 +1666,10 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
   "items": [  
     {  
       "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
-      "name": "plan-name",
+      "service_id": "138401bc-80bd-4d67-bf3a-956e4d543c3c",
+      "service_name": "my-service-offering",
+      "plan_id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
+      "plan_name": "plan-name",
       "plan": {
         "id": "418401bc-80bd-4d67-bf3a-956e4d543c3c",
         "name": "plan-name",
@@ -1744,6 +1762,8 @@ Fetching of a `visibility` resource entity MUST comply with [fetching a resource
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
     "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+    "created_at": "2016-06-08T16:41:22Z",
+    "updated_at": "2016-06-08T16:41:26Z",
     "labels": {
         "label1": ["value1"]
     }
@@ -1755,6 +1775,8 @@ Fetching of a `visibility` resource entity MUST comply with [fetching a resource
 | id* | string | ID of the visibility. |
 | platform_id* | string | ID of the Platform for this Visibility or `null` if this Visibility is valid for all Platforms. |
 | service_plan_id* | string | ID of the Service Plan for this Visibility. |
+| created_at | string | The time of creation [in ISO 8601 format](#data-formats). |
+| updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the Visibility. MAY be an empty object. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
@@ -1780,6 +1802,8 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
       "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+      "created_at": "2016-06-08T16:41:22Z",
+      "updated_at": "2016-06-08T16:41:26Z",
       "labels": {
         "label1": ["value1"]
       }
@@ -1788,6 +1812,8 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "id": "3aaed233-7fb0-4441-becb-4a09f33265d8",
       "platform_id": null,
       "service_plan_id": "83ae38ae-ad02-4fe9-ae39-406a59cdf7e6",
+      "created_at": "2016-06-09T16:41:22Z",
+      "updated_at": "2016-06-09T16:41:26Z",
       "labels": {}
     }
   ]
@@ -1969,10 +1995,13 @@ Example of a Resource Entity that has labels:
 }  
 ```
 
-### Naming Labels
+### Label Keys and Values
 
-Label names SHOULD only consist of alphanumeric characters, periods, hyphens, underscores and MUST NOT contain any white spaces, equals characters ('`=`'), or commas ('`,`').
-Labels names SHOULD NOT be longer than 100 characters. The Service Manager MAY reject labels with longer names. 
+Label keys SHOULD only consist of alphanumeric characters, periods, hyphens, underscores and MUST NOT contain any white spaces, equals characters ('`=`'), or commas ('`,`').
+Labels keys SHOULD NOT be longer than 100 characters. The Service Manager MAY reject labels with longer names. 
+
+Label values MUST NOT be empty strings or contain newline characters.
+Label values SHOULD NOT be longer than 255 characters. The Service Manager MAY reject labels with longer values. 
 
 ### Patching Labels
 
@@ -2034,7 +2063,7 @@ include additional fields within the response.
 | description | string | A user-facing error message explaining why the request failed. If present, MUST be a non-empty string. |
 | broker_error | string | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the broker error code. This field MUST NOT be present if the error was caused by something else. |
 | broker_http_status | integer | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the HTTP status code of that error. This field MUST NOT be present if the error was caused by something else. |
-| entiy_id | string | If a delete operations fails, the this field MUST contain the ID of the entity that couldn't be deleted. If the `cascade` flag was set, this ID might be the ID of an associated entity. |
+| entity_id | string | If a delete operations fails, the this field MUST contain the ID of the entity that couldn't be deleted. If the `cascade` flag was set, this ID might be the ID of an associated entity. |
 | retryable | boolean | If `true`, the client MAY retry the request at a later point in time. If `false`, the client SHOULD not retry the request as it will not be successful. Defaults to `true`. |
 
 \* Fields with an asterisk are REQUIRED.
