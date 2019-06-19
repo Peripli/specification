@@ -67,7 +67,7 @@
 
 ## Overview
 
-The Service Manager API defines an REST interface that allows the management of Platforms, Service Brokers, Service Offerings, Service Plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
+The Service Manager API defines a REST interface that allows the management of Platforms, Service Brokers, Service Offerings, Service Plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
 - A Service Manager Admin API to manage Service Brokers and attached Platforms.
 - A Service Controller API that allows the Service Manager to act as an OSB Platform for Service Brokers that are registered in Service Manager ("Service Manager as a Platform").
 - An OSB API which allows the Service Manager to act as a Service Broker for Platforms that are registered in Service Manager ("Service Manager as a Broker"). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
@@ -276,12 +276,14 @@ The Service Manager MAY also support field queries on nested fields. If so, the 
 A BNF-like definition of a query looks like this:
 ```
 query := predicate | predicate "and" predicate
-predicate := comparison_predicate | in_predicate
+predicate := comparison_predicate | in_predicate | exists_predicate
 
 comparison_predicate := (field | label) comp_op literal
-comp_op := "eq" | "ne" | "gt" | "lt" | "ge" | "le"
+comp_op := "eq" | "en" | "ne" | "nn" | "gt" | "lt" | "ge" | "le"
   
 in_predicate := (field | label) ("in" | "notin") "(" literals ")"
+
+exists_predicate: = label ("exists" | "notexists")
   
 field := !! field name or field path
 label := !! label name
@@ -301,11 +303,13 @@ The Service Manager MUST support the following operators:
 | Operator | Field Query | Label Query |
 | -------- | ----------- | ----------- |
 | eq | Evaluates to true if the field value matches the literal. False otherwise. | Evaluates to true if the label exists and one label value matches the literal. False otherwise. |
-| eq null | Evaluates to true if the field value is `null`. False otherwise. | Evaluates to true if the label doesn't exist. False otherwise. |
+| en | Evaluates to true if the field value matches the literal or if the field value is `null`. False otherwise. | Evaluates to true if the label exists and one label value matches the literal or if the label doesn't exist. False otherwise. |
 | ne | Evaluates to true if the field value does not matches the literal. False otherwise. | Evaluates to true if the label exists and no label value matches the literal. False otherwise. |
-| ne null | Evaluates to true if the field value is not `null`. False otherwise. | Evaluates to true if the label exists. False otherwise. |
+| nn | Evaluates to true if the field value does not matches the literal or if the field value is `null`. False otherwise. | Evaluates to true if the label exists and no label value matches the literal or if the label doesn't exist. False otherwise. |
 | in | Evaluates to true if the field value matches at least one value in the list of literals. False otherwise. | Evaluates to true if the label exists and at least a label value matches one value in the list of literals. False otherwise. |
 | notin | Evaluates to true if the field value does not match any value in the list of literals. False otherwise. | Evaluates to true if the label exists and no label value matches any value in the list of literals. False otherwise. |
+| exists | n/a | Evaluates to true if the label exists. False otherwise. |
+| notexists | n/a | Evaluates to true if the label doesn't exist. False otherwise. |
 | and | Evaluates to true if both the left and right operands evaluate to true. False otherwise. ||
 
 Additionally, the Service Manager MAY support one or multiple of the following operators for field queries:
@@ -1905,6 +1909,7 @@ The OSB Management API prefixes the routes specified in the OSB spec with `/v1/o
 When a request is send to the OSB Management API, after forwarding the call to the actual broker but before returning the response, the Service Manager MAY alter the headers and the body of the response. For example, in the case of `/v1/osb/:broker_id/v2/catalog` request, the Service Manager MAY, amongst other things, add additional plans (reference plan) to the catalog.
 
 In its role of a Platform for the registered brokers, the Service Manager MAY define its own format for `Context Object` and `Originating Identity Header` similar but not limited to those specified in the [OSB spec profiles page](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md).
+For example, the `Context Object` SHOULD contain an entry `instance_name` that provides the name of the Service Instance.
 
 ## Credentials Object
 
