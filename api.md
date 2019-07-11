@@ -81,7 +81,7 @@ This document inherits the terminology from the Service Manager specification an
 
 Additionally, the follow terms and concepts are use:
 
-* *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 50 characters and SHOULD only consist of alphanumeric characters, periods, and hyphens. Using a GUID is RECOMMENDED.
+* *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 50 characters and SHOULD only contain characters from the "Unreserved Characters" as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-2.3). In other words: uppercase and lowercase letters, decimal digits, hyphen, period, underscore and tilde. Using a GUID is RECOMMENDED.
 * *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods, hyphens, and no white spaces. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
 * *Description*: A description is a human readable string, which SHOULD NOT exceed 255 characters. If a description is longer than 255 characters, the Service Manager MAY silently truncate it.
 
@@ -89,7 +89,7 @@ Additionally, the follow terms and concepts are use:
 
 The data format for all Service Manager endpoints is [JSON](https://json.org). That implies that all strings are Unicode strings.
 
-The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[Z|(+|-)hh:mm]`]
+The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[Z|(+|-)hh:mm]`
 
 ### Content Type
 
