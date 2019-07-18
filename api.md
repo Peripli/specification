@@ -16,7 +16,8 @@
   - [Deleting a Resource Entity](#deleting-a-resource-entity)
   - [Getting an Operation Status](#getting-an-operation-status)
   - [Getting Entity Operations](#getting-entity-operations)
-- [Resource types](#resource-types)
+- [Resource Types](#resource-types)
+- [Entity Relationships](#entity-relationships)
 - [Platform Management](#platform-management)
   - [Registering a Platform](#registering-a-platform)
   - [Fetching a Platform](#fetching-a-platform)
@@ -89,7 +90,7 @@ Additionally, the follow terms and concepts are use:
 
 The data format for all Service Manager endpoints is [JSON](https://json.org). That implies that all strings are Unicode strings.
 
-The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss[Z|(+|-)hh:mm]`
+The Service Manager deals with date-time values in some places. Because JSON lacks a date-time data type, date-time values are encoded as strings, following ISO 8601. The only supported date-time format is: `yyyy-mm-ddThh:mm:ss.s[Z|(+|-)hh:mm]`
 
 ### Content Type
 
@@ -494,8 +495,8 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Query-String Field | Type | Description |
 | ---- | ---- | ----------- |
-| cascade | boolean | Some resources cannot be deleted if other associated resources exist. For example, a service instance can only be deleted if there are no associated service bindings. This parameter allows cascade deletion of resource entities that are associated with the resource entity before deleting the actual entity. *A cascading delete MAY not be an atomic operation!* If the deletion of an associated entity fails, this operations fails, but other associated entities might have already been deleted. If this flag is combined with the `force` flag, the entity is deleted even if the deletion of an associated entity failed. Defaults to `false`. |
-| force | boolean | Whether to force the deletion of the resource from the Service Manager. Associated entities are not deleted by default, but this flag can be combined with the `cascade` flag. *Using this flag may result in inconsistent data and should be used with care!* Defaults to `false`. |
+| cascade | boolean | Some entities cannot be deleted if other associated entities exist. For example, a service instance can only be deleted if there are no associated service bindings. This parameter allows cascade deletion of entities that are associated with the entity before deleting the actual entity. *A cascading delete MAY not be an atomic operation!* If the deletion of an associated entity fails, this operations fails, but other associated entities might have already been deleted. If this flag is combined with the `force` flag, the Service Manager will not stop if the deletion of an associated entity fails. It will try to delete as many associated entities as possible as well as the entity itself. Defaults to `false`. |
+| force | boolean | Whether to force the deletion of the entity from the Service Manager. The Service Manager tries to deprovision instances and bindings if necessary (best effort), but even if that fails the, the entity is removed from data store. Associated entities are not deleted by default, but this flag can be combined with the `cascade` flag. *Using this flag may result in inconsistent data and should be used with care!* Defaults to `false`. |
 
 #### Response
 
@@ -665,6 +666,51 @@ Definition of the semantics behind the resource name can be found in the [OSB sp
 The `service visibilities` resource represents enforced visibility policies for Service Offerings and Plans. This allows the Service Manager to specify where Service Plans are visible (in which Platforms, CF orgs, etc).
 
 The `service visibilities` API is described [here](#service-visibility-management).
+
+## Entity Relationships
+
+There are different types of relationships between the different entity types. This section describes these relationships and the normal (non-force and non-cascade) deletion behavior.
+
+> All delete operation accept a `force` flag that can override the constraints defined in this section. In many cases, that will lead to an inconsistent state. Therefore, it is RECOMMENDED to restrict the use of the `force` flag to administrators.
+
+
+      Broker       Visibility ---> Platform
+       |  |             |             ^
+       |  +----------+  |             |
+       |             |  |             | 
+       v             v  v             |
+      Offering ----> Plan <------- Instance <---- Binding
+
+
+### Service Brokers, Service Offerings and Service Plans
+
+Service Offerings and Service Plans depend on the Service Broker that defines them. They come and go with the Service Broker.
+
+The removal of a Service Broker MUST fail if there is still a Service Instance of a Service Plan of that broker.
+
+### Platforms
+
+Platforms do not depend on any other entity.
+
+The removal of a Platform MUST fail if there is still a Service Instance associated with that Platform.
+
+### Service Instances and Service Bindings
+
+Service Instances depend on Service Plans (and with that on a Service Brokers) and on Platforms.
+Service Bindings depend on Service Instances and therefore also on Service Brokers and Platforms.
+
+The deprovisioning of a Service Instance MUST fail if there is at least one Service Binding of that instance.
+
+Service Instances and Service Bindings are "owned" by a Platform. Only the Platform that created the instance or binding is allowed to update and delete those.
+
+That is, it is not possible to delete a Service Instance through the Service Manager API that has been created by an attached Platform. Only the attached Platform can delete such an instance through the OSB API.
+The delete operation of the Service Manager API only works for instances that have been created through the Service Manager API and where therefore the Service Manager is the owning Platform. 
+
+### Visibilities
+
+Visibilities depend on a Service Plan (and with that on a Service Broker) and a Platform. 
+
+If either the Service Plan (the Service Broker) or the Platform goes away, all related Visibilities have to automatically vanish, too.
 
 ## Platform Management
 
@@ -2069,7 +2115,8 @@ include additional fields within the response.
 | broker_error | string | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the broker error code. This field MUST NOT be present if the error was caused by something else. |
 | broker_http_status | integer | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the HTTP status code of that error. This field MUST NOT be present if the error was caused by something else. |
 | entity_id | string | If a delete operations fails, the this field MUST contain the ID of the entity that couldn't be deleted. If the `cascade` flag was set, this ID might be the ID of an associated entity. |
-| retryable | boolean | If `true`, the client MAY retry the request at a later point in time. If `false`, the client SHOULD not retry the request as it will not be successful. Defaults to `true`. |
+| repeatable | boolean | If `true`, the client MAY retry the request at a later point in time. If `false`, the client SHOULD not retry the request as it will not be successful. Defaults to `true`. |
+| instance_usable | boolean | If an update or deprovisioning operation failed, this flag indicates whether or not the Service Instance is still usable. If `true`, the Service Instance can still be used, `false` otherwise. This field MUST NOT be present for errors of other operations. Defaults to `true`. |
 
 \* Fields with an asterisk are REQUIRED.
 
