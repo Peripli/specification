@@ -534,9 +534,9 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ##### Route
 
-`GET /v1/status/operation/:operation_id`
+`GET /v1/status/:status_id`
 
-`:operation_id` is an opaque operation identifier.
+`:status_id` is an opaque status identifier.
 
 #### Parameters
 
@@ -590,18 +590,18 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 {
   "status": [
     {
-      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "status_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
       "state": "in progress",
       "description": "Working on it.",
-      "start_time": "2016-07-09T17:50:00Z",
+      "start_time": "2016-07-09T17:50:00.01Z",
       "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457"
     },
     {
-      "operation_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
+      "status_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
       "state": "failed",
       "description": "Deletion failed.",
-      "start_time": "2016-07-09T17:48:01Z",
-      "end_time": "2016-07-09T17:48:22Z",
+      "start_time": "2016-07-09T17:48:01.45Z",
+      "end_time": "2016-07-09T17:48:22.856Z",
       "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
       "error" : {
         "error": "PermissionDenied",
@@ -771,8 +771,8 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
     "name": "cf-eu-10",
     "type": "cloudfoundry",
     "description": "Cloud Foundry on AWS in Frankfurt.",
-    "created_at": "2016-06-08T16:41:22Z",
-    "updated_at": "2016-06-08T16:41:26Z",
+    "created_at": "2016-06-08T16:41:22.23Z",
+    "updated_at": "2016-06-08T16:41:26.471Z",
     "credentials" : {
         "basic": {
             "username": "admin",
@@ -821,8 +821,8 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "name": "cf-eu-10",
       "type": "cloudfoundry",
       "description": "Cloud Foundry on AWS in Frankfurt.",
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z",
+      "created_at": "2016-06-08T16:41:22.25Z",
+      "updated_at": "2016-06-08T16:41:26.6Z",
       "credentials" : {
         "basic": {
             "username": "admin",
@@ -838,8 +838,8 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "name": "k8s-us-05",
       "type": "kubernetes",
       "description": "Kubernetes on GCP in us-west1.",
-      "created_at": "2016-06-08T17:41:22Z",
-      "updated_at": "2016-06-08T17:41:26Z",
+      "created_at": "2016-06-08T17:41:22.0Z",
+      "updated_at": "2016-06-08T17:41:26.294Z",
       "credentials" : {
         "basic": {
             "username": "admin2",
@@ -968,8 +968,8 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
     "name": "service-broker-name",
     "displayName": "My Service Broker",
     "description": "Service broker providing some valuable services.",
-    "created_at": "2016-06-08T16:41:26Z",
-    "updated_at": "2016-06-08T16:41:26Z",
+    "created_at": "2016-06-08T16:41:26.734Z.104",
+    "updated_at": "2016-06-08T16:41:26.104Z",
     "broker_url": "https://service-broker-url",
     "labels": {
       "label1": ["value1"]
@@ -1011,8 +1011,8 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "name": "service-broker-name",
       "description": "Service broker providing some valuable services.",
-      "created_at": "2016-06-08T16:41:26Z",
-      "updated_at": "2016-06-08T16:41:26Z",
+      "created_at": "2016-06-08T16:41:26.104Z",
+      "updated_at": "2016-06-08T16:41:26.104",
       "broker_url": "https://service-broker-url",
       "labels": {
         "label1": ["value1"]
@@ -1022,8 +1022,8 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "id": "a62b83e8-1604-427d-b079-200ae9247b60",
       "name": "another-broker",
       "description": "More services.",
-      "created_at": "2016-06-08T17:41:26Z",
-      "updated_at": "2016-06-08T17:41:26Z",
+      "created_at": "2016-06-08T17:41:26.104Z",
+      "updated_at": "2016-06-08T17:41:26.104Z",
       "broker_url": "https://another-broker-url",
       "labels": {
       }
@@ -1172,8 +1172,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
+  "created_at": "2016-06-08T16:41:22.345Z",
+  "updated_at": "2016-06-08T16:41:26.62Z"
 }
 ```
 
@@ -1236,8 +1236,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z"
+      "created_at": "2016-06-08T16:41:22.129Z",
+      "updated_at": "2016-06-08T16:41:26.129Z"
     }
   ]
 }
@@ -1381,8 +1381,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z"
+  "created_at": "2016-06-08T16:41:22.213Z",
+  "updated_at": "2016-06-08T16:41:26.0Z"
 }
 ```
 
@@ -1446,8 +1446,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z"
+      "created_at": "2016-06-08T16:41:22.342Z",
+      "updated_at": "2016-06-08T16:41:26.295Z"
     }
   ]
 }
@@ -1552,8 +1552,8 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
   },
   "labels": {
   },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z",
+  "created_at": "2016-06-08T16:41:22.435Z",
+  "updated_at": "2016-06-08T16:41:26.891Z",
 }
 ```
 
@@ -1607,8 +1607,8 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
         "bindings_retrievable": false,
         ...
       },
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z",
+      "created_at": "2016-06-08T16:41:22.945Z",
+      "updated_at": "2016-06-08T16:41:26.525Z",
       "labels": {
       }
     },
@@ -1674,8 +1674,8 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
       }
     }
   },
-  "created_at": "2016-06-08T16:41:22Z",
-  "updated_at": "2016-06-08T16:41:26Z",
+  "created_at": "2016-06-08T16:41:22.104Z",
+  "updated_at": "2016-06-08T16:41:26.734Z",
   "labels": {
   }
 }
@@ -1746,8 +1746,8 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
           }
         }
       },
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z",
+      "created_at": "2016-06-08T16:41:22.104Z",
+      "updated_at": "2016-06-08T16:41:26.734Z",
       "labels": {
 
       }
@@ -1812,8 +1812,8 @@ Fetching of a `visibility` resource entity MUST comply with [fetching a resource
     "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
     "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
     "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-    "created_at": "2016-06-08T16:41:22Z",
-    "updated_at": "2016-06-08T16:41:26Z",
+    "created_at": "2016-06-08T16:41:22.104Z",
+    "updated_at": "2016-06-08T16:41:26.734Z",
     "labels": {
         "label1": ["value1"]
     }
@@ -1852,8 +1852,8 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "id": "36931aaf-62a7-4019-a708-0e9abf7e7a8f",
       "platform_id": "038001bc-80bd-4d67-bf3a-956e4d545e3c",
       "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-      "created_at": "2016-06-08T16:41:22Z",
-      "updated_at": "2016-06-08T16:41:26Z",
+      "created_at": "2016-06-08T16:41:22.104Z",
+      "updated_at": "2016-06-08T16:41:26.734Z",
       "labels": {
         "label1": ["value1"]
       }
@@ -1862,8 +1862,8 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "id": "3aaed233-7fb0-4441-becb-4a09f33265d8",
       "platform_id": null,
       "service_plan_id": "83ae38ae-ad02-4fe9-ae39-406a59cdf7e6",
-      "created_at": "2016-06-09T16:41:22Z",
-      "updated_at": "2016-06-09T16:41:26Z",
+      "created_at": "2016-06-09T16:41:22.104Z",
+      "updated_at": "2016-06-09T16:41:26.734Z",
       "labels": {}
     }
   ]
@@ -1982,42 +1982,70 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
 ## Status Object
 
+ Status objects are meant for clients. They SHOULD NOT convey any Service Manager implementation or process details or use internal terminology. Status description should be meaningful to the majority of end-users. 
+
 | Field | Type | Description |
 | -------------- | ---- | ----------- |
-| operation_id* | string | The ID of the operation. |
+| status_id* | string | The status ID. |
 | state* | string | Valid values are `in progress`, `succeeded`, and `failed`. While `"state": "in progress"`, the Platform SHOULD continue polling. A response with `"state": "succeeded"` or `"state": "failed"` MUST cause the Platform to cease polling. |
 | description | string | A user-facing message that can be used to tell the user details about the status of the operation. |
 | start_time* | string | The time of operation start [in ISO 8601 format](#data-formats). |
 | end_time | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
 | entity_id | string | The ID of the entity. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
 | error | error object | An error object describing why the operation has failed. This field SHOULD be present if `"state": "failed"` and MUST NOT be present for other states. |
+| sub_status | array of [sub status objects](#sub-status-object) | If an operation consists of multiple steps, the Service Manager MAY provide the status of each step here. These steps SHOULD be comprehensible for the end-user and SHOULD NOT reveal any implementation specific details. For example, a cascade delete of a Service Instances may require the deletion of bindings. Each binding deletion could be such a step with its own sub-status. Also, retries MAY be recorded here. For example, the Service Manager may need multiple attempts to reach a Service Broker. Each attempt could have its own status. If present, MUST be a non-empty array. |
 
 \* Fields with an asterisk are REQUIRED.
 
 ```json
 {
-  "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
+  "status_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
   "state": "in progress",
   "description": "Working on it.",
-  "start_time": "2016-07-09T17:50:00Z",
-  "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457"
+  "start_time": "2016-07-09T17:50:00.123Z",
+  "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
+  "sub_status": [
+    {
+      "state": "succeeded",
+      "start_time": "2016-07-09T17:50:00.130Z",
+      "end_time": "2016-07-09T17:50:01.003Z",
+      "description": "Step one - done.",
+    },
+    {
+      "state": "in progress",
+      "start_time": "2016-07-09T17:50:01.052Z",
+      "description": "Waiting...",
+    }
+  ]
 }
 ```
 
 ```json
 {
-  "operation_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
+  "status_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
   "state": "failed",
   "description": "Deletion failed.",
   "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-  "start_time": "2016-07-09T17:48:01Z",
-  "end_time": "2016-07-09T17:48:22Z",
+  "start_time": "2016-07-09T17:48:01.724Z",
+  "end_time": "2016-07-09T17:48:22.889Z",
   "error" : {
     "error": "PermissionDenied",
     "description": "User has no permission to delete the platform entry."
   }
 }
 ```
+
+### Sub-Status Object
+
+| Field | Type | Description |
+| -------------- | ---- | ----------- |
+| state* | string | Valid values are `in progress`, `succeeded`, and `failed`.  Multiple sub-status can be in state `in progress` at the same time. The overall status is independent of sub-status. Even if one sub-status is in state `failed` the overall status might be in state `succeeded`.   |
+| description | string | A user-facing message that can be used to tell the user details about this sub-status. |
+| start_time* | string | The time of operation start [in ISO 8601 format](#data-formats). |
+| end_time | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
+| error | error object | An error object describing why the operation has failed. This field SHOULD be present if `"state": "failed"` and MUST NOT be present for other states. |
+
+
 
 ## Labels Object
 
@@ -2100,18 +2128,19 @@ All operations in one request MUST be performed as one atomic change. Either all
 
 ## Errors
 
-When a request to the Service Manager fails, it MUST return an
-appropriate HTTP response code. Where the specification defines the expected
-response code, that response code MUST be used.
+Errors are meant for clients. They SHOULD NOT convey any Service Manager implementation details such as stack traces or use internal terminology. If debug or developer data is required, that data SHOULD be logged and SHOULD be linked via the `reference_id` with this error.
+
+When a request to the Service Manager fails, it MUST return an appropriate HTTP response code. Where the specification defines the expected response code, that response code MUST be used.
 
 The response body MUST be a valid JSON Object.
-For error responses, the following fields are defined. The Service Manager MAY
-include additional fields within the response.
+For error responses, the following fields are defined. The Service Manager MAY include additional fields within the response. 
+
 
 | Response Field | Type | Description |
 | --- | --- | --- |
 | error* | string | A single word that uniquely identifies the error cause. If present, MUST be a non-empty string with no white space. It MAY be used to identify the error programmatically on the client side. See also the [Error Codes](#error-codes) section. |
 | description | string | A user-facing error message explaining why the request failed. If present, MUST be a non-empty string. |
+| reference_id | string | If the Service Manager logged this error somewhere, this reference ID allows the correlation of this error to the log entries. If present, MUST be a non-empty string. |
 | broker_error | string | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the broker error code. This field MUST NOT be present if the error was caused by something else. |
 | broker_http_status | integer | If the upstream broker returned an error (`"error": "BrokerError"`), this field holds the HTTP status code of that error. This field MUST NOT be present if the error was caused by something else. |
 | entity_id | string | If a delete operations fails, the this field MUST contain the ID of the entity that couldn't be deleted. If the `cascade` flag was set, this ID might be the ID of an associated entity. |
