@@ -1163,6 +1163,10 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   "plan_name": "small-plan",
   "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
   "platform_name": "cluster-4567", 
+  "context": {
+    "platform": "kubernetes",
+    "namespace": "myns"
+  },
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
@@ -1189,6 +1193,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | plan_name | string | The name of the Service Plan. |
 | platform_id* | string | ID of the Platform that owns this instance or `null` if the Service Manager owns it. |
 | platform_name | string |The name of the Platform that owns this instance or `null` if the Service Manager owns it. |
+| context | object | Contextual data for the Service Instance. |
 | dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
 | parameters | object |	Configuration parameters for the Service Instance. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
@@ -1365,7 +1370,11 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
   "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-  "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
+  "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb",
+  "context": {
+    "platform": "kubernetes",
+    "namespace": "myns"
+  }, 
   "binding": {
     "credentials": {  
       "creds-key-63": "creds-val-63",
@@ -1399,6 +1408,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | service_instance_id* | string | The Service Instance ID. |
 | platform_id* | string | ID of the Platform that owns this binding or `null` if the Service Manager owns it. |
 | platform_name | string |The name of the Platform that owns this binding or `null` if the Service Manager owns it. |
+| context | object | Contextual data for the Service Binding. |
 | binding | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
 | parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
