@@ -339,15 +339,23 @@ Label and field queries MAY be combined. The returned list MUST only contain ent
 #### Paging Parameters
 
 All `List` endpoints MUST return the list of entities ordered by creation date and entity ID.
-Clients define the begin of the result set by providing the last entity ID of the previous page or no last entity ID to retrieve the first page. Clients control the size of the result set by setting the `max_items` parameter.
-The Service Manager MUST provide an [appropriate error](#errors) if the provided last entity ID cannot be found. In this case, the client has to reiterate the list from the beginning.
+Clients define the beginning of the result set by setting the `token` parameter. If this parameter is missing or empty, the first page is returned. To retrieves subsequent pages, the client has to provide the token value that was included in the previous page.  
+The Service Manager MUST provide an [appropriate error](#errors) if the provided token is invalid. In this case, the client has to reiterate the list from the beginning.  
+Clients control the size of the result set by setting the `max_items` parameter.
 
 Paging can be controlled by the following query string parameters: 
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
+| token | string | the token that was included in the previous page. The first page is requested by either not providing this parameter or providing an empty string. |
 | max_items | int | the maximum number of items to return in the response. The server MUST NOT exceed this maximum but MAY return a smaller number of items than the specified value. The server SHOULD NOT return an error if `max_items` exceeds the internally supported page size. It SHOULD return a smaller number of items instead. If the client sets `max_items` to 0, it is assumed that the client is only interested in the total number of items. The default is implementation specific. |
-| last_id | string | the ID of the last entity of the previous page. The first page is requested by either not providing this parameter or providing an empty string. |
+
+##### Paging Response Headers
+
+| Header | Type | Description |
+| ------ | ---- | ----------- |
+| Link | string | If the response contains a `token` field, a `Link` header of type `rel="next"` SHOULD be return (see [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3)). If there is no `token` field, this header MUST NOT be present. |
+
 
 #### Response
 
@@ -355,7 +363,7 @@ Paging can be controlled by the following query string parameters:
 | ----------- | ----------- |
 | 200 OK | MUST be returned upon successful retrieval of the resource entities. The expected response body is below. |
 | 400 Bad Request | MUST be returned if the value of the `max_items` parameter is a negative number. |
-| 404 NotFound | MUST be returned if the `last_id` parameter references an unknown or for the current user invisible entity. |
+| 404 NotFound | MUST be returned if the `token` parameter references an unknown or for the current user invisible entity. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -366,7 +374,7 @@ The response body MUST be a valid JSON Object.
 
 | Response Field | Type | Description |
 | -------------- | ---- | ----------- |
-| has_more_items* | boolean | `true` if the list contains additional items after those contained in the response. `false` otherwise. If `true`, a request with a larger `max_items` value is expected to return additional results (unless the list has changed or `max_items` exceeds the internally supported page size). |
+| token | string | an opaque token that is required for fetching the next page. If the list contains additional items after those contained in the response, this MUST be a non-empty string. Otherwise this field MUST NOT be present. If this field is present, a request with a larger `max_items` value is expected to return additional results (unless the list has changed or `max_items` exceeds the internally supported page size). |
 | num_items | int | if the server knows the total number of items in the result set, the server SHOULD include the number here. If the server does not know the number of items in the result set, this field MUST NOT be included. The value MAY NOT be accurate the next time the client retrieves the result set or the next page in the result set. |
 | items* | array of objects | the list of items. This list MAY be empty. |
 
@@ -374,7 +382,7 @@ The response body MUST be a valid JSON Object.
 
 ```json
 {  
-  "has_more_items": true,
+  "token": "token1234",
   "num_items": 42,
   "items": [
     {
@@ -813,7 +821,6 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
 
 ```json
 {
-  "has_more_items": false,
   "num_items": 2,
   "items": [
     {
@@ -1004,7 +1011,6 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
 
 ```json
 {
-  "has_more_items": false,
   "num_item": 2,
   "items": [
     {
@@ -1221,7 +1227,6 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 
 ```json
 {  
-  "has_more_items": false,
   "num_items": 1,
   "items": [  
     {  
@@ -1434,7 +1439,6 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 
 ```json
 {  
-  "has_more_items": false,
   "num_items": 1,
   "items": [  
     {  
@@ -1593,7 +1597,7 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 
 ```json
 {  
-  "has_more_items": true,
+  "token": "token1234",
   "num_items": 523,
   "items":[
     {  
@@ -1721,7 +1725,7 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
 
 ```json
 {  
-  "has_more_items": true,
+  "token": "token1234",
   "num_items": 732,
   "items": [  
     {  
@@ -1855,7 +1859,6 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
 
 ```json
 {
-  "has_more_items": false,
   "num_item": 2,
   "items": [
     {
@@ -2188,7 +2191,7 @@ use these error codes for the specified failure scenarios.
 | Unauthorized | 401 | Unauthenticated request. | Provide credentials or a token. |
 | Forbidden | 403 | The current user has no permission to execute the operation. | Retry operation with a different user. | 
 | NotFound | 404 | Entity not found or not visible to the current user. | |
-| LastIDNotFound | 404 | There is no entity that matches the `last_id` parameter. | Reiterate the list from the beginning. |
+| TokenInvalid | 404 | The provided token is invalid. | Reiterate the list from the beginning. |
 | IDConflict | 409 | An entity with this ID already exists. | Retry creation with another ID. |
 | NameConflict | 409 | An entity with this name already exists. | Retry creation with another name. |
 | AssociatedEntityConflict | 409 | The entity cannot be deleted because an associated entity exists. | Remove the associated entity or retry the delete operation with the `cascade` or `force` flag. |
