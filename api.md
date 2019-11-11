@@ -61,7 +61,7 @@
 - [Information Management](#information-management)
 - [OSB Management](#osb-management)
 - [Credentials Object](#credentials-object)
-- [Status Object](#status-object)
+- [Operation Object](#operation-object)
 - [Labels Object](#labels-object)       
 - [Errors](#errors)
 - [Mitigating Orphans](#mitigating-orphans)
@@ -137,13 +137,13 @@ In both cases, the response body SHOULD follow the [Errors](#errors) section.
 
 This specification does not define any permission model. Authorization checks are Service Manager implementation specific. However, the Service Manager SHOULD follow these basic guidelines:
 
-* If a user is allowed to update or delete an entity, the user SHOULD also be allowed to fetch and list the entity and to see the status of the entity.
+* If a user is allowed to update or delete an entity, the user SHOULD also be allowed to fetch and list the entity and to see the operations for the entity.
 * If a user is allowed to see an entity, the user SHOULD have access to *all* fields and labels of the entity.
 * The Service Manager MAY restrict write access to some fields and labels. There is no way for the client to find out in advance which data can be set and updated.
 
 ## Asynchronous Operations
 
-The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation status](#status-object). A Service Manager client MAY then use the Location header's value to [poll for the status](#getting-an-operation-status). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#status-object) for certain period of time after the operation has finished.
+The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation status](operation-object). A Service Manager client MAY then use the Location header's value to [poll for the operation status](#getting-an-operation-status). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#operation-object) for certain period of time after the operation has finished.
 The Service Manager MAY decide to execute operations synchronously. In this case it responses with `200 Ok`, `201 Created`, or `204 No Content`, depending on the operation.
 
 ### Concurrent Mutating Requests
@@ -187,11 +187,11 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location | string | An URL from where the [status](#status-object) of the operation can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
+| Location | string | An URL from where the result for the [operation](#operation-object) can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
 
 ##### Body
 
-Unless defined otherwise in the sections below, the response body MUST be [the representation of the entity](#fetching-a-resource-entity) if the status code is `201 Created` or MUST be a [status object](#status-object) if the status code is `202 Accepted`.
+Unless defined otherwise in the sections below, the response body MUST be [the representation of the entity](#fetching-a-resource-entity) if the status code is `201 Created` or `{}` if the status code is `202 Accepted`.
 
 ### Fetching a Resource Entity
 
@@ -430,14 +430,14 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location | string | An URL from where the [status](#status-object) of the operation can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
+| Location | string | An URL from where the result for the [operation](#operation-object) can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
 
 ##### Body
 
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
-| 202 Accepted | The initial [Status Object](#status-object). |
+| 202 Accepted | Empty json `{}`. |
 | 4xx or 5xx | An [Error Object](#errors). |
 
 ### Patching a Resource Entity
@@ -477,14 +477,14 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location | string | An URL from where the [status](#status-object) of the operation can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
+| Location | string | An URL from where the result for the [operation](#operation-object) can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
 
 ##### Body
 
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
-| 202 Accepted | The initial [Status Object](#status-object). |
+| 202 Accepted | Empty json `{}`. |
 | 4xx or 5xx | An [Error Object](#errors). |
 
 ### Deleting a Resource Entity
@@ -524,14 +524,14 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Location | string | An URL from where the [status](#status-object) of the operation can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
+| Location | string | An URL from where the result for the [operation](#operation-object) can be obtained. This header MUST be present if the status `202 Accepted` has been returned and MUST NOT be present for all other status codes. |
 
 ##### Body
 
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | A valid JSON object. |
-| 202 Accepted | The initial [Status Object](#status-object). |
+| 202 Accepted | Empty json `{}`. |
 | 204 No Content | No body MUST be provided. |
 | 4xx | An [Error Object](#errors). |
 
@@ -542,9 +542,9 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ##### Route
 
-`GET /v1/status/:status_id`
+`GET /v1/operation/:operation_id`
 
-`:status_id` is an opaque status identifier.
+`:operation_id` is an opaque operation identifier.
 
 #### Parameters
 
@@ -555,7 +555,7 @@ None.
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | MUST be returned if the status is available. |
-| 410 Gone | MUST be returned if the requested status doesn't exist or if the user is not allowed to know this status. The client SHOULD cease polling. |
+| 410 Gone | MUST be returned if the requested operation doesn't exist or if the user is not allowed to know this operation. The client SHOULD cease polling. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -563,11 +563,11 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Retry-After | integer | The number of seconds to wait before checking the status again. This header SHOULD only be provided if the operation is still in progress. |
+| Retry-After | integer | The number of seconds to wait before checking the operation again. This header SHOULD only be provided if the operation is still in progress. |
 
 ##### Response Body
 
-If the status code is 200, the response body MUST be a [Status Object](#status-object).
+If the status code is 200, the response body MUST be a [Operation Object](#operation-object).
 
 
 ### Getting Entity Operations
@@ -577,11 +577,14 @@ If the status code is 200, the response body MUST be a [Status Object](#status-o
 
 ##### Route
 
-`GET /v1/status/:resource_type/:resource_entity_id`
+`GET /v1/operation?fieldQuery=resource_id = :resource_id`
+
+`:resource_id` MUST be the ID of a previously created resource entity of this resource type.
+
+`GET /v1/operation?fieldQuery=resource_type = :resource_type`
 
 `:resources_type` MUST be a valid Service Manager resource type.
 
-`:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
 #### Response
 
@@ -596,25 +599,35 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ```json
 {
-  "status": [
+  "num_items": 2,
+  "items": [
     {
-      "status_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
-      "state": "in progress",
+      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
       "description": "Working on it.",
-      "start_time": "2016-07-09T17:50:00.01Z",
-      "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457"
+      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "state": "in progress",
+      "type": "update",
+      "created_at": "2016-07-09T17:50:00.01Z",
+      "updated_at": "2016-07-09T17:50:00.01Z",
+      "resource_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
+      "resource_type": "/v1/service_instances"      
     },
     {
-      "status_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
-      "state": "failed",
-      "description": "Deletion failed.",
-      "start_time": "2016-07-09T17:48:01.45Z",
-      "end_time": "2016-07-09T17:48:22.856Z",
-      "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-      "error" : {
-        "error": "PermissionDenied",
-        "description": "User has no permission to delete the platform entry."
-      }
+      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "description": "Working on it.",
+      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "state": "in progress",
+      "type": "update",
+      "created_at": "2016-07-09T17:50:00.01Z",
+      "updated_at": "2016-07-09T17:50:00.01Z",
+      "resource_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
+      "resource_type": "/v1/service_instances",
+      "errors":[
+        {
+           "error":"InternalServerError",
+           "description":"Internal Server Error"
+        }
+      ]      
     }
   ]
 }
@@ -622,7 +635,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Response field | Type | Description |
 | -------------- | ---- | ----------- |
-| status* | array of [Status Objects](#status-object) | A list of all status objects related to this entity. All "in progress" operations MUST be present, all other status known to the Service Manager SHOULD be present. This list MAY be empty if no operation is in process. |
+| items* | array of [Operation Objects](#operation-object) | A list of all operation objects related to this entity. All "in progress" operations MUST be present, all other status known to the Service Manager SHOULD be present. This list MAY be empty if no operation is in process. |
 
 \* Fields with an asterisk are REQUIRED.
 
@@ -1993,72 +2006,45 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 \* Fields with an asterisk are REQUIRED.
 
 
-## Status Object
+## Operation Object
 
- Status objects are meant for clients. They SHOULD NOT convey any Service Manager implementation or process details or use internal terminology. Status description should be meaningful to the majority of end-users. 
+ Operation objects are meant for clients. They SHOULD NOT convey any Service Manager implementation or process details or use internal terminology. Status description should be meaningful to the majority of end-users. 
 
 | Field | Type | Description |
 | -------------- | ---- | ----------- |
-| status_id* | string | The status ID. |
+| operation_id* | string | The operation ID. |
+| correlation_id | string | The correlation_id from the request related to this operation |
+| type* | string | can be one of CREATE, UPDATE, DELETE |
 | state* | string | Valid values are `in progress`, `succeeded`, and `failed`. While `"state": "in progress"`, the Platform SHOULD continue polling. A response with `"state": "succeeded"` or `"state": "failed"` MUST cause the Platform to cease polling. |
-| description | string | A user-facing message that can be used to tell the user details about the status of the operation. |
-| start_time* | string | The time of operation start [in ISO 8601 format](#data-formats). |
-| end_time | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
-| entity_id | string | The ID of the entity. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
-| error | error object | An error object describing why the operation has failed. This field SHOULD be present if `"state": "failed"` and MUST NOT be present for other states. |
-| sub_status | array of [sub status objects](#sub-status-object) | If an operation consists of multiple steps, the Service Manager MAY provide the status of each step here. These steps SHOULD be comprehensible for the end-user and SHOULD NOT reveal any implementation specific details. For example, a cascade delete of a Service Instances may require the deletion of bindings. Each binding deletion could be such a step with its own sub-status. Also, retries MAY be recorded here. For example, the Service Manager may need multiple attempts to reach a Service Broker. Each attempt could have its own status. If present, MUST be a non-empty array. |
+| description | string | A user-facing message that can be used to tell the user details about the operation. |
+| created_at* | string | The time of operation start [in ISO 8601 format](#data-formats). |
+| updated_at* | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
+| resource_id | string | The ID of the resource. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
+| resource_type* | string | The type of the resource (e.g. /v1/service_brokers, /v1/service_instances) |
+| errors | array of error object | Errors describing why the operation has failed. |
 
 \* Fields with an asterisk are REQUIRED.
 
 ```json
+
 {
-  "status_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
-  "state": "in progress",
-  "description": "Working on it.",
-  "start_time": "2016-07-09T17:50:00.123Z",
-  "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-  "sub_status": [
-    {
-      "state": "succeeded",
-      "start_time": "2016-07-09T17:50:00.130Z",
-      "end_time": "2016-07-09T17:50:01.003Z",
-      "description": "Step one - done.",
-    },
-    {
-      "state": "in progress",
-      "start_time": "2016-07-09T17:50:01.052Z",
-      "description": "Waiting...",
-    }
-  ]
+   "operation_id":"c7880869-e1e8-403a-b57c-1396f5c89239",
+   "description": "updating instance...",    
+   "correlation_id":"a2480869-d1e6-215c-d42a-1256f5c54321",
+   "type":"UPDATE",
+   "state":"FAILED",
+   "created_at":"2016-07-09T17:48:01.45Z",
+   "updated_at":"2016-07-09T17:55:02.33Z",
+   "resource_id":"a67ebb30-a71a-4c23-81c6-f79fae6fe457",
+   "resource_type":"/v1/service_instances",
+   "errors":[
+      {
+         "error":"InternalServerError",
+         "description":"Internal Server Error"
+      }
+   ]
 }
 ```
-
-```json
-{
-  "status_id": "c7880869-e1e8-403a-b57c-1396f5c89239",
-  "state": "failed",
-  "description": "Deletion failed.",
-  "entity_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-  "start_time": "2016-07-09T17:48:01.724Z",
-  "end_time": "2016-07-09T17:48:22.889Z",
-  "error" : {
-    "error": "PermissionDenied",
-    "description": "User has no permission to delete the platform entry."
-  }
-}
-```
-
-### Sub-Status Object
-
-| Field | Type | Description |
-| -------------- | ---- | ----------- |
-| state* | string | Valid values are `in progress`, `succeeded`, and `failed`.  Multiple sub-status can be in state `in progress` at the same time. The overall status is independent of sub-status. Even if one sub-status is in state `failed` the overall status might be in state `succeeded`.   |
-| description | string | A user-facing message that can be used to tell the user details about this sub-status. |
-| start_time* | string | The time of operation start [in ISO 8601 format](#data-formats). |
-| end_time | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
-| error | error object | An error object describing why the operation has failed. This field SHOULD be present if `"state": "failed"` and MUST NOT be present for other states. |
-
-
 
 ## Labels Object
 
