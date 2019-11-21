@@ -1120,8 +1120,7 @@ There are two ways to specify the Service Offering of the to be provisioned Serv
 ```json
 {  
   "name": "my-service-instance",
-  "service_id": "service-offering-id-here",
-  "plan_id": "service-plan-id-here",
+  "service_plan_id": "service-plan-id-here",
   "parameters": {  
     "parameter1": "value1",
     "parameter2": "value2"
@@ -1137,9 +1136,6 @@ There are two ways to specify the Service Offering of the to be provisioned Serv
 | Request field | Type | Description |
 | -------------- | ---- | ----------- |
 | name* | string | A non-empty instance name. |
-| service_offering_id | string | The internal ID of a Service Offering. If this field is set, the `service_id` field MUST NOT be present. |
-| broker_id | string | The ID of a Service Broker. |
-| service_id | string | The ID of a Service Offering as provided by the catalog. If this field is set the `service_offering_id` field MUST NOT be present. If this field is ambiguous because multiple Service Brokers provide this service, the `broker_id` field MUST be set. |
 | plan_id* | string | MUST be the ID of a Service Plan. |
 | parameters | object | Configuration parameters for the Service Instance. |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
@@ -1175,28 +1171,16 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 {  
   "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
   "name": "my-service-instance",
-  "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
-  "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
-  "service_name": "my-service",
-  "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-  "plan_name": "small-plan",
+  "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
-  "platform_name": "cluster-4567", 
-  "context": {
-    "platform": "kubernetes",
-    "namespace": "myns"
-  },
-  "parameters": {  
-    "parameter1": "value1",
-    "parameter2": "value2"
-  },
   "labels": {  
     "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
     ]
   },
   "created_at": "2016-06-08T16:41:22.345Z",
-  "updated_at": "2016-06-08T16:41:26.62Z"
+  "updated_at": "2016-06-08T16:41:26.62Z",
+  "usable": true
 }
 ```
 
@@ -1204,21 +1188,14 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | -------------- | ---- | ----------- |
 | id* | string | Service Instance ID. | 
 | name* | string | Service Instance name. |
-| service_offering_id* | string | The internal ID of the Service Offering. |
-| broker_id* | string | The ID of Service Broker that manages this instance. |
-| service_id* | string | The ID of a Service Offering as provided by the catalog. |
-| service_name | string | The name of a Service Offering. |
-| plan_id* | string | The ID of the Service Plan. |
-| plan_name | string | The name of the Service Plan. |
+| service_plan_id* | string | The ID of the Service Plan. |
 | platform_id* | string | ID of the Platform that owns this instance or `null` if the Service Manager owns it. |
-| platform_name | string |The name of the Platform that owns this instance or `null` if the Service Manager owns it. |
-| context | object | Contextual data for the Service Instance. |
 | dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
-| parameters | object |	Configuration parameters for the Service Instance. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | orphan | boolean | If `true` the Service Instance is an orphan and will eventually be removed by the Service Manager. If `false` the Service Instance is useable. This field MUST only be present, if the Service Instance has been created by the Service Manager. |
+| usable* | boolean | If the instance is `usable` or not (as per the OSB spec `instance_usable`) |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -1245,22 +1222,16 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
     {  
       "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-instance",
-      "service_offering_id": "84ea69e4-61bf-4478-a40a-c736c683d693",
-      "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
-      "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
-      "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
+      "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
       "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
-      "parameters": {
-        "parameter1": "value1",
-        "parameter2": "value2"
-      },
       "labels": {  
         "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
       "created_at": "2016-06-08T16:41:22.129Z",
-      "updated_at": "2016-06-08T16:41:26.129Z"
+      "updated_at": "2016-06-08T16:41:26.129Z",
+      "usable": true
     }
   ]
 }
