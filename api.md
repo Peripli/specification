@@ -536,15 +536,13 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 | 4xx | An [Error Object](#errors). |
 
 
-### Getting an Operation Status
+### Listing Operations
 
 #### Request
 
 ##### Route
 
-`GET /v1/operation/:operation_id`
-
-`:operation_id` is an opaque operation identifier.
+`GET /v1/operations`
 
 #### Parameters
 
@@ -555,7 +553,6 @@ None.
 | Status Code | Description |
 | ----------- | ----------- |
 | 200 OK | MUST be returned if the status is available. |
-| 410 Gone | MUST be returned if the requested operation doesn't exist or if the user is not allowed to know this operation. The client SHOULD cease polling. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -567,24 +564,70 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ##### Response Body
 
-If the status code is 200, the response body MUST be a [Operation Object](#operation-object).
+If the status code is 200, the response body MUST be an array of [Operation Object](#operation-object).
 
 
-### Getting Entity Operations
+| Response field | Type | Description |
+| -------------- | ---- | ----------- |
+| items* | array of [Operation Objects](#operation-object) | A list of all operation objects related to this entity. All "in progress" operations MUST be present, all other status known to the Service Manager SHOULD be present. This list MAY be empty if no operation is in process. |
 
+\* Fields with an asterisk are REQUIRED.
+
+
+```json
+{
+  "num_items": 2,
+  "items": [
+    {
+      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "description": "Working on it.",
+      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "state": "in progress",
+      "type": "create",
+      "created_at": "2016-07-09T17:50:00.01Z",
+      "updated_at": "2016-07-09T17:50:00.01Z",
+      "resource_id": "c67ebb30-a71a-4c23-81c6-f79fae6fe457",
+      "resource_type": "/v1/service_instances",
+      "reschedule": true,
+      "platform_id": "service-manager",
+    },
+    {
+      "operation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "description": "Working on it.",
+      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+      "state": "failed",
+      "type": "create",
+      "created_at": "2016-07-09T17:50:00.01Z",
+      "updated_at": "2016-07-09T17:50:00.01Z",
+      "resource_id": "v67ebb30-a71a-4c23-81c6-f79fae6fe457",
+      "resource_type": "/v1/service_instances",
+      "reschedule": false,
+      "deletion_scheduled": "2016-07-09T17:55:00.01Z",
+      "platform_id": "service-manager",
+      "errors":[
+        {
+           "error":"InternalServerError",
+           "description":"Internal Server Error"
+        }
+      ]      
+    }
+  ]
+}
+```
+
+### Getting an specific operation for a resource 
 
 #### Request
 
 ##### Route
 
-`GET /v1/operation?fieldQuery=resource_id = :resource_id`
+`GET /v1/:resource_type/:resource_id/operations/:operation_id`
 
 `:resource_id` MUST be the ID of a previously created resource entity of this resource type.
 
-`GET /v1/operation?fieldQuery=resource_type = :resource_type`
-
 `:resources_type` MUST be a valid Service Manager resource type.
 
+`:operation_id` is an opaque operation identifier.
 
 #### Response
 
@@ -599,46 +642,19 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ```json
 {
-  "num_items": 2,
-  "items": [
-    {
-      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
-      "description": "Working on it.",
-      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
-      "state": "in progress",
-      "type": "update",
-      "created_at": "2016-07-09T17:50:00.01Z",
-      "updated_at": "2016-07-09T17:50:00.01Z",
-      "resource_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-      "resource_type": "/v1/service_instances"      
-    },
-    {
-      "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
-      "description": "Working on it.",
-      "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
-      "state": "in progress",
-      "type": "update",
-      "created_at": "2016-07-09T17:50:00.01Z",
-      "updated_at": "2016-07-09T17:50:00.01Z",
-      "resource_id": "a67ebb30-a71a-4c23-81c6-f79fae6fe457",
-      "resource_type": "/v1/service_instances",
-      "errors":[
-        {
-           "error":"InternalServerError",
-           "description":"Internal Server Error"
-        }
-      ]      
-    }
-  ]
+  "operation_id": "42fcdf1f-79bc-43e1-8865-844e82d0979d",
+  "description": "Working on it.",
+  "correlation_id": "12fcdf1f-79bc-43e1-8865-844e82d0979d",
+  "state": "in progress",
+  "type": "create",
+  "created_at": "2016-07-09T17:50:00.01Z",
+  "updated_at": "2016-07-09T17:50:00.01Z",
+  "resource_id": "c67ebb30-a71a-4c23-81c6-f79fae6fe457",
+  "resource_type": "/v1/service_instances",
+  "reschedule": false,
+  "platform_id": "service-manager"
 }
 ```
-
-| Response field | Type | Description |
-| -------------- | ---- | ----------- |
-| items* | array of [Operation Objects](#operation-object) | A list of all operation objects related to this entity. All "in progress" operations MUST be present, all other status known to the Service Manager SHOULD be present. This list MAY be empty if no operation is in process. |
-
-\* Fields with an asterisk are REQUIRED.
-
 
 ## Resource Types
 
@@ -802,7 +818,8 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
     },
     "labels": {
       "label1": ["value1"]
-    }
+    },
+    "ready": true
 }
 ```
 
@@ -819,6 +836,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
+| ready* | bool | whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -851,7 +869,8 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       },
       "labels": {
         "label1": ["value1"]
-      }
+      },
+      "ready": true
     },
     {
       "id": "e031d646-62a5-4a50-9d8e-23165172e9e1",
@@ -867,7 +886,8 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
         }
       },
       "labels": {
-      }
+      },
+      "ready": true
     }
   ]
 }
@@ -993,7 +1013,8 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
     "broker_url": "https://service-broker-url",
     "labels": {
       "label1": ["value1"]
-    }
+    },
+    "ready": true
 }
 ```
 
@@ -1009,6 +1030,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 | created_at | string | The time of creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the service broker. MAY be an empty object. |
+| ready* | bool | whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -1035,7 +1057,8 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "broker_url": "https://service-broker-url",
       "labels": {
         "label1": ["value1"]
-      }
+      },
+      "ready": true
     },
     {
       "id": "a62b83e8-1604-427d-b079-200ae9247b60",
@@ -1045,7 +1068,8 @@ Listing `service brokers` MUST comply with [listing all resource entities of a r
       "updated_at": "2016-06-08T17:41:26.104Z",
       "broker_url": "https://another-broker-url",
       "labels": {
-      }
+      },
+      "ready": true
     }
   ]
 }
@@ -1173,6 +1197,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   "name": "my-service-instance",
   "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
+  "context": {"account": "my-account"},
+  "dashboard_url":"http://my-service-dashboard.com",
   "labels": {  
     "context_id": [
       "bvsded31-c303-123a-aab9-8crar19e1218"
@@ -1180,7 +1206,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   },
   "created_at": "2016-06-08T16:41:22.345Z",
   "updated_at": "2016-06-08T16:41:26.62Z",
-  "usable": true
+  "usable": true,
+  "ready": true
 }
 ```
 
@@ -1190,12 +1217,13 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | name* | string | Service Instance name. |
 | service_plan_id* | string | The ID of the Service Plan. |
 | platform_id* | string | ID of the Platform that owns this instance or `null` if the Service Manager owns it. |
+| context | object | Contextual data for the resource. |
 | dashboard_url | string | The URL of a web-based management user interface for the Service Instance; we refer to this as a service dashboard. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
-| orphan | boolean | If `true` the Service Instance is an orphan and will eventually be removed by the Service Manager. If `false` the Service Instance is useable. This field MUST only be present, if the Service Instance has been created by the Service Manager. |
 | usable* | boolean | If the instance is `usable` or not (as per the OSB spec `instance_usable`) |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -1223,7 +1251,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       "id": "238001bc-80bd-4d67-bf3a-956e4d543c3c",
       "name": "my-service-instance",
       "service_plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
-      "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
+      "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb",
+      "context": {"account": "my-account"},
       "labels": {  
         "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
@@ -1231,7 +1260,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       },
       "created_at": "2016-06-08T16:41:22.129Z",
       "updated_at": "2016-06-08T16:41:26.129Z",
-      "usable": true
+      "usable": true,
+      "ready": true
     }
   ]
 }
@@ -1354,25 +1384,11 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 {  
   "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
   "name": "my-service-binding",
-  "broker_id": "f08eb906-9343-45e5-9dc6-50bd4a1e21f7",
-  "service_offering_id": "84ea69e4-61bf-4478-a40a-c736c683d693",
-  "service_id": "31129f3c-2e19-4abb-b509-ceb1cd157132",
-  "plan_id": "fe173a83-df28-4891-8d91-46334e04600d",
   "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-  "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb",
-  "context": {
-    "platform": "kubernetes",
-    "namespace": "myns"
-  }, 
-  "binding": {
-    "credentials": {  
-      "creds-key-63": "creds-val-63",
-      "url": "https://my.example.org"
-    }
-  },
-  "parameters": {  
-    "parameter1": "value1",
-    "parameter2": "value2"
+  "context": {"account": "my-account"}, 
+  "credentials": {  
+    "creds-key-63": "creds-val-63",
+    "url": "https://my.example.org",
   },
   "labels": {  
     "context_id": [
@@ -1380,7 +1396,8 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
     ]
   },
   "created_at": "2016-06-08T16:41:22.213Z",
-  "updated_at": "2016-06-08T16:41:26.0Z"
+  "updated_at": "2016-06-08T16:41:26.0Z",
+  "ready": true
 }
 ```
 
@@ -1388,22 +1405,13 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | -------------- | ---- | ----------- |
 | id* | string | The Service Binding ID. | 
 | name* | string | The Service Binding name. |
-| service_offering_id* | string | The internal ID of the Service Offering. |
-| broker_id* | string | The ID of Service Broker that manages this instance. |
-| service_id* | string | The ID of a Service Offering as provided by the catalog. |
-| service_name | string | The name of a Service Offering. |
-| plan_id* | string | The ID of the Service Plan. |
-| plan_name | string | The name of the Service Plan. |
 | service_instance_id* | string | The Service Instance ID. |
-| platform_id* | string | ID of the Platform that owns this binding or `null` if the Service Manager owns it. |
-| platform_name | string |The name of the Platform that owns this binding or `null` if the Service Manager owns it. |
-| context | object | Contextual data for the Service Binding. |
-| binding | object | The binding returned by the Service Broker. In most cases, this object contains a `credentials` object. |
-| parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
+| context | object | Contextual data for the resource. |
+| credentials | object | Credentials to access the binding. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
-| orphan | boolean | If `true` the Service Binding is an orphan and will eventually be removed by the Service Manager. If `false` the Service Binding is useable. This field MUST only be present, if the Service Binding has been created by the Service Manager. |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -1419,8 +1427,6 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 
 ####  Response Body
 
-:warning: TODO 
-
 ```json
 {  
   "num_items": 1,
@@ -1429,23 +1435,19 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       "id": "138001bc-80bd-4d67-bf3a-956e4w543c3c",
       "name": "my-service-binding",
       "service_instance_id": "asd124bc21-df28-4891-8d91-46334e04600d",
-      "platform_id": "3f04164d-6aef-4438-9bf2-08f9dd5d2edb", 
-      "binding": {
-        "credentials": {  
-          "creds-key-63": "creds-val-63"
-        }
-      },
-      "parameters": {  
-        "parameter1": "value1",
-        "parameter2": "value2"
+      "context": {"account": "my-account"}, 
+      "credentials": {  
+        "creds-key-63": "creds-val-63",
+        "url": "https://my.example.org",
       },
       "labels": {  
         "context_id": [
           "bvsded31-c303-123a-aab9-8crar19e1218"
         ]
       },
-      "created_at": "2016-06-08T16:41:22.342Z",
-      "updated_at": "2016-06-08T16:41:26.295Z"
+      "created_at": "2016-06-08T16:41:22.213Z",
+      "updated_at": "2016-06-08T16:41:26.0Z",
+      "ready": true
     }
   ]
 }
@@ -1552,6 +1554,7 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
   },
   "created_at": "2016-06-08T16:41:22.435Z",
   "updated_at": "2016-06-08T16:41:26.891Z",
+  "ready": true
 }
 ```
 
@@ -1566,6 +1569,7 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
@@ -1608,7 +1612,8 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
       "created_at": "2016-06-08T16:41:22.945Z",
       "updated_at": "2016-06-08T16:41:26.525Z",
       "labels": {
-      }
+      },
+      "ready": true
     },
     ...
   ]
@@ -1675,7 +1680,8 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
   "created_at": "2016-06-08T16:41:22.104Z",
   "updated_at": "2016-06-08T16:41:26.734Z",
   "labels": {
-  }
+  },
+  "ready": true
 }
 ```
 
@@ -1692,6 +1698,7 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the fields query parameter.
 
@@ -1748,7 +1755,8 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
       "updated_at": "2016-06-08T16:41:26.734Z",
       "labels": {
 
-      }
+      },
+      "ready": true
     }
   ]
 }
@@ -1814,7 +1822,8 @@ Fetching of a `visibility` resource entity MUST comply with [fetching a resource
     "updated_at": "2016-06-08T16:41:26.734Z",
     "labels": {
         "label1": ["value1"]
-    }
+    },
+    "ready": true
 }
 ```
 
@@ -1826,6 +1835,7 @@ Fetching of a `visibility` resource entity MUST comply with [fetching a resource
 | created_at | string | The time of creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the Visibility. MAY be an empty object. |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are provided by default. The other fields MAY be requested by the `fields` query parameter.
 
@@ -1853,7 +1863,8 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "updated_at": "2016-06-08T16:41:26.734Z",
       "labels": {
         "label1": ["value1"]
-      }
+      },
+      "ready": true
     },
     {
       "id": "3aaed233-7fb0-4441-becb-4a09f33265d8",
@@ -1861,7 +1872,10 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
       "service_plan_id": "83ae38ae-ad02-4fe9-ae39-406a59cdf7e6",
       "created_at": "2016-06-09T16:41:22.104Z",
       "updated_at": "2016-06-09T16:41:26.734Z",
-      "labels": {}
+      "labels": {
+      
+      },
+      "ready": true
     }
   ]
 }
@@ -1992,7 +2006,10 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 | updated_at* | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
 | resource_id | string | The ID of the resource. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
 | resource_type* | string | The type of the resource (e.g. /v1/service_brokers, /v1/service_instances) |
+| deletion_scheduled | string | The time when deletion of this resource was scheduled [in ISO 8601 format](#data-formats). |
+| reschedule | bool | Whether the operation has reached a checkpoint and is retryable. |
 | errors | array of error object | Errors describing why the operation has failed. |
+| ready* | boolean | Whether the resource is ready or not. |
 
 \* Fields with an asterisk are REQUIRED.
 
@@ -2008,6 +2025,7 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
    "updated_at":"2016-07-09T17:55:02.33Z",
    "resource_id":"a67ebb30-a71a-4c23-81c6-f79fae6fe457",
    "resource_type":"/v1/service_instances",
+   "ready": true,
    "errors":[
       {
          "error":"InternalServerError",
