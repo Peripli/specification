@@ -42,13 +42,16 @@
 - [Service Offering Management](#service-offering-management)
   - [Fetching a Service Offering](#fetching-a-service-offering)
   - [Listing Service Offerings](#listing-service-offerings)
+  - [Patching a Service Offering](#patching-a-service-offering)
 - [Service Plan Management](#service-plan-management)
   - [Fetching a Service Plan](#fetching-a-service-plan)
   - [Listing Service Plans](#listing-service-plans)
+  - [Patching a Service Plan](#patching-a-service-plan)
 - [Service Visibility Management](#service-visibility-management)
   - [Creating a Visibility](#creating-a-visibility)
   - [Fetching a Visibility](#fetching-a-visibility)
   - [Listing All Visibilities](#listing-all-visibilities)
+  - [Patching a Visibility](#patching-a-visibility)
   - [Deleting a Visibility](#deleting-a-visibility)
 - [Operation Management](#operation-management)
 - [Information Management](#information-management)
@@ -644,7 +647,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | -------------- | ---- | ----------- |
 | id | string | ID of the Platform. |
 | name | string | Platform name. |
-| type*| string | Type of the Platform. |
+| type | string | Type of the Platform. |
 | description | string | Platform description. |
 | credentials | [credentials](#credentials-object) | A JSON object that contains credentials which the Service Broker Proxy (or the Platform) MUST be used to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling Platform from these credentials. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
@@ -876,7 +879,7 @@ See [Registering a Service Broker](#registering-a-service-broker) and [Patching 
 
 ### Deleting a Service Broker
 
-Deletion of a `platform` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
+Deletion of a `service broker` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
 This operation MUST fail if there are service instances associated with this service broker and neither the `force` nor the `cascade` flag are set.
 
@@ -964,7 +967,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | Response field | Type | Description |
 | -------------- | ---- | ----------- |
 | id | string | Service Instance ID. |
-| name*| string | Service Instance name. |
+| name | string | Service Instance name. |
 | service_plan_id | string | The ID of the Service Plan. |
 | platform_id | string | ID of the Platform that owns this instance or `null` if the Service Manager owns it. |
 | context | object | Contextual data for the resource. |
@@ -1304,6 +1307,22 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 }
 ```
 
+### Patching a Service Offering
+
+Patching of a `service offering` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
+
+Only patching of labels is supported.
+
+#### Route
+
+`PATCH /v1/service_offerings/:service_offering_id`
+
+`:service_offering_id` The ID of a previously registered Service Offering.
+
+##### Request Body
+
+See [Patching Labels](#patching-labels).
+
 ## Service Plan Management
 
 As per the OSB API terminology, a service plan is representation of the costs and benefits for a given variant of the service, potentially as a tier that a service broker offers. Service Manager MUST expose a management API of the service plans offered by services of the registered service brokers.
@@ -1393,6 +1412,22 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
    ]
 }
 ```
+
+### Patching a Service Plan
+
+Patching of a `service plan` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
+
+Only patching of labels is supported.
+
+#### Route
+
+`PATCH /v1/service_plans/:service_plan_id`
+
+`:service_plan_id` The ID of a previously registered Service Plan.
+
+##### Request Body
+
+See [Patching Labels](#patching-labels).
 
 ## Service Visibility Management
 
@@ -1509,6 +1544,10 @@ Listing `visibilities` MUST comply with [listing all resource entities of a reso
   ]
 }
 ```
+
+### Patching a Visibility
+
+Patching of a `visibiliy` resource entity MUST comply with [patching a resource entity](#patching-a-resource-entity).
 
 #### Route
 
