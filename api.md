@@ -9,10 +9,10 @@
 - [General Resource Management](#general-resource-management)
   - [Creating a Resource Entity](#creating-a-resource-entity)
   - [Fetching a Resource Entity](#fetching-a-resource-entity)
-  - [Listing all Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
+  - [Listing All Resource Entities of a Resource Type](#listing-all-resource-entities-of-a-resource-type)
   - [Patching a Resource Entity](#patching-a-resource-entity)
   - [Deleting a Resource Entity](#deleting-a-resource-entity)
-  - [Getting an Operation Status](#getting-an-specific-operation-for-a-resource)
+  - [Getting an specific operation for a resource](#getting-an-specific-operation-for-a-resource)
 - [Resource Types](#resource-types)
 - [Entity Relationships](#entity-relationships)
 - [Platform Management](#platform-management)
@@ -107,7 +107,7 @@ This specification does not define any permission model. Authorization checks ar
 
 ## Asynchronous Operations
 
-The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation status](operation-object). A Service Manager client MAY then use the Location header's value to [poll for the operation status](#getting-an-operation-status). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#operation-object) for certain period of time after the operation has finished.
+The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation](#operation-object). A Service Manager client MAY then use the Location header's value to [poll for the operation status](#getting-an-specific-operation-for-a-resource). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#operation-object) for certain period of time after the operation has finished.
 The Service Manager MAY decide to execute operations synchronously. In this case it responses with `200 Ok`, `201 Created`, or `204 No Content`, depending on the operation.
 
 ### Concurrent Mutating Requests
@@ -1104,7 +1104,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
   }, 
   "credentials": {  
     "creds-key-63": "creds-val-63",
-    "url": "https://my.example.org",
+    "url": "https://my.example.org"
   },
   "labels": {  
     "context_id": [
@@ -1152,7 +1152,7 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
       "context": {"account": "my-account"}, 
       "credentials": {  
         "creds-key-63": "creds-val-63",
-        "url": "https://my.example.org",
+        "url": "https://my.example.org"
       },
       "labels": {  
         "context_id": [
@@ -1203,8 +1203,6 @@ Deletion of a `service binding` resource entity MUST comply with [deleting a res
 
 As per the OSB API terminology a service offering represents the advertisement of a service that a service broker supports. Service Manager MUST expose a management API of the service offerings offered by the registered service brokers.
 
-The Service Manager MAY add, remove, or change Service Offerings details. For example, the Service Manager MAY replace the `metadata.displayName` or `description` field value with translations based on the `Accept-Language` HTTP request header. It MAY also add a [`metadata.displayName--i18n` field](#localization) or [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
-
 ### Fetching a Service Offering
 
 Fetching of a `service offering` resource entity MUST comply with [fetching a resource entity](#fetching-a-resource-entity).
@@ -1239,8 +1237,8 @@ Fetching of a `service offering` resource entity MUST comply with [fetching a re
     "overview-broker"
   ],
   "created_at": "2020-04-27T11:16:49.112474Z",
-  "updated_at": "2020-04-27T11:16:49.307321Z"
-  "ready": true,
+  "updated_at": "2020-04-27T11:16:49.307321Z",
+  "ready": true
 }
 ```
 
@@ -1298,9 +1296,9 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
         "overview-broker"
       ],
       "created_at": "2020-04-27T11:16:49.112474Z",
-      "updated_at": "2020-04-27T11:16:49.307321Z"
-      "ready": true,
-    }
+      "updated_at": "2020-04-27T11:16:49.307321Z",
+      "ready": true
+    },
     ...
   ]
 }
@@ -1309,8 +1307,6 @@ Listing `service offerings` MUST comply with [listing all resource entities of a
 ## Service Plan Management
 
 As per the OSB API terminology, a service plan is representation of the costs and benefits for a given variant of the service, potentially as a tier that a service broker offers. Service Manager MUST expose a management API of the service plans offered by services of the registered service brokers.
-
-The Service Manager MAY add, remove, or change Service Plan details. For example, the Service Manager MAY replace the `metadata.displayName` or `description` field value with translations based on the `Accept-Language` HTTP request header. It MAY also add a [`metadata.displayName--i18n` field](#localization) or [`description--i18n` field](#localization) or do other changes. That is, Service Offering object returned by the Service Manager MAY differ from the one provided by the upstream Service Broker.
 
 ### Fetching a Service Plan
 
