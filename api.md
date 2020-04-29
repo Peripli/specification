@@ -227,11 +227,9 @@ query := predicate | predicate "and" predicate
 predicate := comparison_predicate | in_predicate | exists_predicate
 
 comparison_predicate := (field | label) comp_op literal
-comp_op := "eq" | "en" | "ne" | "nn" | "gt" | "lt" | "ge" | "le"
+comp_op := "eq" | "en" | "ne" | "gt" | "lt" | "ge" | "le"
   
 in_predicate := (field | label) ("in" | "notin") "(" literals ")"
-
-exists_predicate: = label ("exists" | "notexists")
   
 field := !! field name or field path
 label := !! label name
@@ -252,7 +250,6 @@ The Service Manager MUST support the following operators:
 | eq | Evaluates to true if the field value matches the literal. False otherwise. | Evaluates to true if the label exists and one label value matches the literal. False otherwise. |
 | en | Evaluates to true if the field value matches the literal or if the field value is `null`. False otherwise. | Evaluates to true if the label exists and one label value matches the literal or if the label doesn't exist. False otherwise. |
 | ne | Evaluates to true if the field value does not matches the literal. False otherwise. | Evaluates to true if the label exists and no label value matches the literal. False otherwise. |
-| nn | Evaluates to true if the field value does not matches the literal or if the field value is `null`. False otherwise. | Evaluates to true if the label exists and no label value matches the literal or if the label doesn't exist. False otherwise. |
 | in | Evaluates to true if the field value matches at least one value in the list of literals. False otherwise. | Evaluates to true if the label exists and at least a label value matches one value in the list of literals. False otherwise. |
 | notin | Evaluates to true if the field value does not match any value in the list of literals. False otherwise. | Evaluates to true if the label exists and no label value matches any value in the list of literals. False otherwise. |
 | and | Evaluates to true if both the left and right operands evaluate to true. False otherwise. ||
@@ -406,7 +403,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 | 204 No Content | MUST be returned if the resource has been deleted and there is no additional data provided by the Service Manager. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. |
 | 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. |
-| 409 Conflict | MUST be returned if associated entities exist and neither the `cascade` nor the `force` flags are set. |
+| 409 Conflict | MUST be returned if associated entities exist |
 | 422 Unprocessable Entity | MUST be returned if another operation in already in progress. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
@@ -727,7 +724,7 @@ See [Registering a Platform](#registering-a-platform) and [Patching Labels](#pat
 
 Deletion of a `platform` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
-All [Service Visibilities](#service-visibility-management) entries that belong to this `platform` resource entity are automatically removed, regardless of the `cascade` and `force` flags.
+All [Service Visibilities](#service-visibility-management) entries that belong to this `platform` resource entity are automatically removed.
 
 #### Route
 
@@ -753,7 +750,6 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
 ```json
 {
     "name": "service-broker-name",
-    "displayName": "My Service Broker",
     "description": "Service broker providing some valuable services.",
     "broker_url": "http://service-broker.example.com",
     "credentials": {
@@ -881,7 +877,7 @@ See [Registering a Service Broker](#registering-a-service-broker) and [Patching 
 
 Deletion of a `service broker` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
 
-This operation MUST fail if there are service instances associated with this service broker and neither the `force` nor the `cascade` flag are set.
+This operation MUST fail if there are service instances associated with this service broker.
 
 #### Route
 
@@ -1076,7 +1072,6 @@ Creation of a `service binding` resource entity MUST comply with [creating a res
 | -------------- | ---- | ----------- |
 | name* | string | A non-empty instance name. |
 | service_instance_id* | string | MUST be the ID of a Service Instance from SM database. |
-| bind_resource | BindResource | See `bind_resource` in the OSB API specification. |
 | parameters | object | Configuration parameters for the Service Binding. Service Brokers SHOULD ensure that the client has provided valid configuration parameters and values for the operation. |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
 
@@ -1913,7 +1908,6 @@ The PATCH APIs of the resources that support labels MUST support update of label
 | Operation | Description |
 | --------- | ----------- |
 | add | Adds a new label or new values. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, any new values MUST be added to the label. If any of the `values` already exist in the label, they MUST be ignored silently. Any existing values MUST remain unchanged. `values` field is REQUIRED. |
-| set | Adds a new label or overwrites an existing one. If a label with the given `key` does not exist already, it MUST be created with the given `values`. Otherwise, all label values MUST be replaced with the given `values`. `values` field is REQUIRED. |
 | remove | Removes a label or some of its values. If a label with the given `key` does not exist, the operation MUST be ignored silently. Otherwise, the given `values` MUST be removed from the specified label. Any existing label values not specified in `values`, MUST remain unchanged. If any of the `values` are not present in the label, they MUST be ignored silently. If the label remains with no values, it MUST be removed completely. If `values` field is not provided, the whole label with all its values MUST be removed. |
 
 All operations in one request MUST be performed as one atomic change. Either all or none of them are performed.
@@ -1982,7 +1976,6 @@ use these error codes for the specified failure scenarios.
 | Forbidden | 403 | The current user has no permission to execute the operation. | Retry operation with a different user. | 
 | NotFound | 404 | Entity not found or not visible to the current user. | |
 | Conflict | 409 | An entity with this name already exists. | Retry creation with another name. |
-| AssociatedEntityConflict | 409 | The entity cannot be deleted because an associated entity exists. | Remove the associated entity or retry the delete operation with the `cascade` or `force` flag. |
 | VisibilityAlreadyExists | 409 | A visibility for this Platform and Service Plan combination already exists. | Update visibility instead. |
 | Gone | 410 | There is no data about the operation anymore. | Don't retry. |
 | ConcurrentOperation | 422 | The entity is already processed by another operation. | Retry after the currently running operation is finished. |
