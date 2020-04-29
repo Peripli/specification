@@ -14,7 +14,7 @@
   - [Updating a Resource Entity](#updating-a-resource-entity)
   - [Patching a Resource Entity](#patching-a-resource-entity)
   - [Deleting a Resource Entity](#deleting-a-resource-entity)
-  - [Getting an specific operation for a resource](#getting-an-specific-operation-for-a-resource)
+  - [Getting a specific operation for a resource](#getting-a-specific-operation-for-a-resource)
 - [Resource Types](#resource-types)
 - [Entity Relationships](#entity-relationships)
 - [Platform Management](#platform-management)
@@ -71,22 +71,22 @@
 
 ## Overview
 
-The Service Manager API defines a REST interface that allows the management of Platforms, Service Brokers, Service Offerings, Service Plans, service instances and service bindings from a central place. The Service Manager API can be split into three groups:
+The Service Manager API defines a REST interface that allows the management of Platforms, Service Brokers, Service Offerings, Service Plans, Service Instances and Service Bindings from a central place. The Service Manager API can be split into three groups:
 - A Service Manager Admin API to manage Service Brokers and attached Platforms.
 - A Service Controller API that allows the Service Manager to act as an OSB Platform for Service Brokers that are registered in Service Manager ("Service Manager as a Platform").
 - An OSB API which allows the Service Manager to act as a Service Broker for Platforms that are registered in Service Manager ("Service Manager as a Broker"). The latter implements the [Open Service Broker (OSB) API](https://github.com/openservicebrokerapi/servicebroker/).
 
-One of the access channels to the Service Manager is via the `smctl` CLI. The API should play nice in this context.
+One of the access channels to the Service Manager is via the [smctl CLI](https://github.com/Peripli/service-manager-cli). The API should play nice in this context.
 
 
 ## Terminology and Definitions
 
 This document inherits the terminology from the Service Manager specification and [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/) specification.
 
-Additionally, the follow terms and concepts are use:
+Additionally, the follow terms and concepts are used:
 
 * *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 50 characters and SHOULD only contain characters from the "Unreserved Characters" as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-2.3). In other words: uppercase and lowercase letters, decimal digits, hyphen, period, underscore and tilde. Using a GUID is RECOMMENDED.
-* *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods, hyphens, and no white spaces. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
+* *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods and hyphens. Whitespaces are not allowed. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
 * *Description*: A description is a human readable string, which SHOULD NOT exceed 255 characters. If a description is longer than 255 characters, the Service Manager MAY silently truncate it.
 
 ## Data Formats
@@ -127,7 +127,7 @@ The values SHOULD be non-empty translations of the `displayName` respectively `d
 
 The Service Manager MAY store and use all or a subset of the entries in the `displayName--i18n` and `description--i18n` objects or MAY ignore these objects completely.
 
-## Authentication an Authorization
+## Authentication and Authorization
 
 Unless there is some out of band communication and agreement between a Service Manager client and the Service Manager, a client MUST authenticate with the Service Manager using OAuth 2.0 (the `Authorization:` header) on every request. 
 
@@ -145,7 +145,7 @@ This specification does not define any permission model. Authorization checks ar
 
 ## Asynchronous Operations
 
-The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation](#operation-object). A Service Manager client MAY then use the Location header's value to [poll for the operation status](#getting-an-specific-operation-for-a-resource). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#operation-object) for certain period of time after the operation has finished.
+The Service Manager APIs for creating, updating, and deleting entities MAY work asynchronously. When such an operation is triggered, the Service Manager MAY respond with `202 Accepted` and a `Location header` specifying a URL to obtain the [operation](#operation-object). A Service Manager client MAY then use the Location header's value to [poll for the operation status](#getting-a-specific-operation-for-a-resource). Once the operation has finished  (successfully or not), the client SHOULD stop polling. The Service Manager keeps and provides [operation status](#operation-object) for certain period of time after the operation has finished.
 The Service Manager MAY decide to execute operations synchronously. In this case it responses with `200 Ok`, `201 Created`, or `204 No Content`, depending on the operation.
 
 ### Concurrent Mutating Requests
@@ -163,9 +163,9 @@ The following section generalizes how Service Manager resources are managed. A `
 
 ##### Route
 
-`POST /v1/:resources_type`
+`POST /v1/:resource_type`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 ##### Body
 
@@ -193,7 +193,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 ##### Body
 
-Unless defined otherwise in the sections below, the response body MUST be [the representation of the entity](#fetching-a-resource-entity) if the status code is `201 Created` or `{}` if the status code is `202 Accepted`.
+Unless defined otherwise in the sections below, the response body MUST be [the representation of the entity](#fetching-a-resource-entity) if the status code is `201 Created` or empty JSON `{}` if the status code is `202 Accepted`.
 
 ### Fetching a Resource Entity
 
@@ -203,7 +203,7 @@ Unless defined otherwise in the sections below, the response body MUST be [the r
 
 `GET /v1/:resource_type/:resource_entity_id`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
@@ -243,7 +243,7 @@ Returns all or a subset of the resource entities of this resource type.
 
 `GET /v1/:resource_type`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 #### Fields and Labels Parameters
 
@@ -353,7 +353,7 @@ Paging can be controlled by the following query string parameters:
 
 | Header | Type | Description |
 | ------ | ---- | ----------- |
-| Link | string | If the response contains a `token` field, a `Link` header of type `rel="next"` SHOULD be return (see [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3)). If there is no `token` field, this header MUST NOT be present. |
+| Link | string | If the response contains a `token` field, a `Link` header of type `rel="next"` SHOULD be returned (see [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html#section-3.3)). If there is no `token` field, this header MUST NOT be present. |
 
 
 #### Response
@@ -362,7 +362,7 @@ Paging can be controlled by the following query string parameters:
 | ----------- | ----------- |
 | 200 OK | MUST be returned upon successful retrieval of the resource entities. The expected response body is below. |
 | 400 Bad Request | MUST be returned if the value of the `max_items` parameter is a negative number. |
-| 404 NotFound | MUST be returned if the `token` parameter references an unknown or for the current user invisible entity. |
+| 404 NotFound | MUST be returned if the `token` parameter references an unknown for the current user entity. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
 
@@ -447,7 +447,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 `PATCH /v1/:resource_type/:resource_entity_id`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
@@ -467,7 +467,7 @@ Patching the resource labels is specified in the [Patching Labels section](#patc
 | 202 Accepted | MUST be returned if a resource updating is successfully initiated as a result of this request. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data or attempting to null out mandatory fields. |
 | 404 Not Found | MUST be returned if the requested resource is missing or if the user is not allowed to know this resource. |
-| 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager. |
+| 409 Conflict | MUST be returned if a resource with a different `id` but the same `name` is already registered with the Service Manager and Service Manager enforces uniqueness on the `name` in the registration context. |
 | 422 Unprocessable Entity | MUST be returned if another create/update/patch operation in already in progress. |
 
 Responses with a status code >= 400 will be interpreted as a failure. The response SHOULD include a user-facing message in the `description` field. For details see [Errors](#errors).
@@ -484,7 +484,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 | ----------- | ----------- |
 | 200 OK | Representation of the updated entity. The returned JSON object MUST be the same that is returned by the corresponding [fetch endpoint](#fetching-a-resource-entity). |
 | 202 Accepted | Empty json `{}`. |
-| 4xx or 5xx | An [Error Object](#errors). |
+| 4xx | An [Error Object](#errors). |
 
 ### Deleting a Resource Entity
 
@@ -494,7 +494,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 `DELETE /v1/:resource_type/:resource_entity_id`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
@@ -509,7 +509,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 | Status Code | Description |
 | ----------- | ----------- |
-| 200 OK | MUST be returned if the resource has been deleted. The body MUST a non-empty, valid JSON object. If no data should be be returned from the Service Manager, the status code `204 No Content` SHOULD be used. |
+| 200 OK | MUST be returned if the resource has been deleted. The body MUST be a non-empty, valid JSON object. If no data should be be returned from the Service Manager, the status code `204 No Content` SHOULD be used. |
 | 202 Accepted | MUST be returned if a resource deletion is successfully initiated as a result of this request. |
 | 204 No Content | MUST be returned if the resource has been deleted and there is no additional data provided by the Service Manager. |
 | 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. |
@@ -534,7 +534,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 | 204 No Content | No body MUST be provided. |
 | 4xx | An [Error Object](#errors). |
 
-### Getting an specific operation for a resource 
+### Getting a specific operation for a resource
 
 #### Request
 
@@ -544,7 +544,7 @@ Responses with a status code >= 400 will be interpreted as a failure. The respon
 
 `:resource_id` MUST be the ID of a previously created resource entity of this resource type.
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 `:operation_id` is an opaque operation identifier.
 
@@ -669,7 +669,7 @@ The deprovisioning of a Service Instance MUST fail if there is at least one Serv
 
 Service Instances and Service Bindings are "owned" by a Platform. Only the Platform that created the instance or binding is allowed to update and delete those.
 
-That is, it is not possible to delete a Service Instance through the Service Manager API that has been created by an attached Platform. Only the attached Platform can delete such an instance through the OSB API.
+It is not possible to delete a Service Instance through the Service Manager API that has been created by an attached Platform. Only the attached Platform can delete such an instance through the OSB API.
 The delete operation of the Service Manager API only works for instances that have been created through the Service Manager API and where therefore the Service Manager is the owning Platform. 
 
 ### Visibilities
@@ -686,7 +686,7 @@ Operations can exist even after the resource they represent is deleted. This mea
 
 ### Registering a Platform
 
-In order for a Platform to be usable with the Service Manager, the Service Manager needs to know about the Platforms existence. Essentially, registering a Platform would allow the Service Manager to manage the service brokers and service visibilities in this Platform.
+In order for a Platform to be usable with the Service Manager, the Service Manager needs to know about the Platform's existence. Essentially, registering a Platform would allow the Service Manager to manage the service brokers and service visibilities in this Platform.
 
 Creation of a `platform` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
 
@@ -729,7 +729,7 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 
 `GET /v1/platforms/:platform_id`
 
-`:platform_id` MUST be the ID of a previously registered Platform.
+`:platform_id` MUST be the ID of an existing Platform.
 
 #### Response Body
 
@@ -849,7 +849,7 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 `PATCH /v1/platforms/:platform_id`
 
-`:platform_id` The ID of a previously registered Platform.
+`:platform_id` The ID of an existing Platform.
 
 ##### Request Body
 
@@ -870,14 +870,14 @@ All [Service Visibilities](#service-visibility-management) entries that belong t
 
 `DELETE /v1/platforms/:platform_id`
 
-`:platform_id` MUST be the ID of a previously registered Platform.
+`:platform_id` MUST be the ID of an existing Platform.
 
 ## Service Broker Management
 
 ### Registering a Service Broker
 
 Registering a broker in the Service Manager makes the services exposed by this service broker available to all Platforms registered in the Service Manager.
-Upon registration, Service Manager fetches and validate the catalog from the service broker.
+Upon registration, Service Manager fetches and validates the catalog from the service broker.
 
 Creation of a `service broker` resource entity MUST comply with [creating a resource entity](#creating-a-resource-entity).
 
@@ -928,7 +928,7 @@ Fetching of a `service broker` resource entity MUST comply with [fetching a reso
 
 `GET /v1/service_brokers/:broker_id`
 
-`:broker_id` MUST be the ID of a previously registered service broker.
+`:broker_id` MUST be the ID of an existing service broker.
 
 ##### Response Body
 
@@ -1032,7 +1032,7 @@ Patching a service broker (even with an empty JSON object `{}`) MUST trigger an 
 
 `PATCH /v1/service_brokers/:broker_id`
 
-`:broker_id` MUST be the ID of a previously registered service broker.
+`:broker_id` MUST be the ID of an existing service broker.
 
 #### Request Body
 
@@ -1051,7 +1051,7 @@ Using the `force` flag MAY leave service bindings and service instances in the d
 
 `DELETE /v1/service_brokers/:broker_id`
 
-`:broker_id` MUST be the ID of a previously registered service broker.
+`:broker_id` MUST be the ID of an existing service broker.
 
 ## Service Instance Management
 
@@ -1124,6 +1124,9 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 {
   "id": "c5aa6823-6313-4b91-bd95-79eef15c45ea",
   "name": "my-instance",
+  "context": {
+    "account": "my-account"
+  }, 
   "created_at": "2020-04-27T11:53:29.889164Z",
   "updated_at": "2020-04-27T11:53:29.889164Z",
   "labels": {
@@ -1550,7 +1553,7 @@ Only patching of labels is supported.
 
 `PATCH /v1/service_offerings/:service_offering_id`
 
-`:service_offering_id` The ID of a previously registered Service Offering.
+`:service_offering_id` The ID of an existing Service Offering.
 
 ##### Request Body
 
@@ -1584,6 +1587,9 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
   "catalog_id": "a167b29fa60b94235ce5a426fa14ac48",
   "catalog_name": "fake-plan-2",
   "free": true,
+  "bindable": true,
+  "plan_updateable": true,
+  "maximum_polling_duration": 60,
   "service_offering_id": "64314767-b572-4145-a17a-d2e3a28405bb",
   "metadata": {
     "supportedPlatforms": [
@@ -1604,6 +1610,9 @@ Fetching of a `service plan` resource entity MUST comply with [fetching a resour
 | catalog_id* | string | The service catalog id for this Service Plan. |
 | catalog_name* | string | The service catalog name for this Service Plan. |
 | free | boolean | Whether the Service Plan is free or not. |
+| bindable | boolean | Specifies whether Service Instances of the Service Plan can be bound to applications. This field is OPTIONAL. If specified, this takes precedence over the bindable attribute of the Service Offering. If not specified, the default is derived from the Service Offering. |
+| plan_updateable | boolean | Whether the Plan supports upgrade/downgrade/sidegrade to another version. This field is OPTIONAL. If specificed, this takes precedence over the Service Offering's plan_updateable field. If not specified, the default is derived from the Service Offering. Please note that the attribute is intentionally misspelled as `plan_updateable` for legacy reasons. |
+| maximum_polling_duration | integer | The maximum duration that SM would try polling. |
 | service_offering_id* | string | The SM database id of the Service Offering to which this Service Plan belongs. |
 | metadata | object | OSB metadata for this Service Plan. |
 | labels* | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
@@ -1635,6 +1644,9 @@ Listing `service plans` MUST comply with [listing all resource entities of a res
       "catalog_id": "a167b29fa60b94235ce5a426fa14ac48",
       "catalog_name": "fake-plan-2",
       "free": true,
+      "bindable": true,
+      "plan_updateable": true,
+      "maximum_polling_duration": 60,
       "service_offering_id": "64314767-b572-4145-a17a-d2e3a28405bb",
       "metadata": {
         "supportedPlatforms": [
@@ -1660,7 +1672,7 @@ Only patching of labels is supported.
 
 `PATCH /v1/service_plans/:service_plan_id`
 
-`:service_plan_id` The ID of a previously registered Service Plan.
+`:service_plan_id` The ID of an existing Service Plan.
 
 ##### Request Body
 
@@ -1974,7 +1986,7 @@ The OSB Management API prefixes the routes specified in the OSB spec with `/v1/o
 
 `:broker_id` is the ID of the broker that the OSB call is targeting. The Service Manager MUST forward the call to this broker. The `broker_id` MUST be a globally unique non-empty string.
 
-When a request is send to the OSB Management API, after forwarding the call to the actual broker but before returning the response, the Service Manager MAY alter the headers and the body of the response. For example, in the case of `/v1/osb/:broker_id/v2/catalog` request, the Service Manager MAY, amongst other things, add additional plans (reference plan) to the catalog.
+When a request is sent to the OSB Management API, after forwarding the call to the actual broker but before returning the response, the Service Manager MAY alter the headers and the body of the response. For example, in the case of `/v1/osb/:broker_id/v2/catalog` request, the Service Manager MAY, amongst other things, add additional plans (reference plan) to the catalog.
 
 In its role of a Platform for the registered brokers, the Service Manager MAY define its own format for `Context Object` and `Originating Identity Header` similar but not limited to those specified in the [OSB spec profiles page](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md).
 For example, the `Context Object` SHOULD contain an entry `instance_name` that provides the name of the Service Instance.
@@ -2162,9 +2174,9 @@ All operations in one request MUST be performed as one atomic change. Either all
 
 ##### Route
 
-`PATCH /v1/:resources_type/:resource_entity_id`
+`PATCH /v1/:resource_type/:resource_entity_id`
 
-`:resources_type` MUST be a valid Service Manager resource type.
+`:resource_type` MUST be a valid Service Manager [resource type](#resource-types).
 
 `:resource_entity_id` MUST be the ID of a previously created resource entity of this resource type.
 
@@ -2246,4 +2258,4 @@ use these error codes for the specified failure scenarios.
 
 Service Manager MUST also handle the orphan mitigation process as described in the [Orphan Mitigation section](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#orphan-mitigation) of the OSB spec for Service Instances and Binding that have been created by the Service Manager. How this is done is an implementation detail.
 
-The Service Manager MAY create an operation when the orphan mitigation is in process (deletion of the Service Instance or Binding) is running. This allows users to track the progress and potentially failed attempts.
+The Service Manager MAY create an operation when the orphan mitigation is in process (deletion of the Service Instance or Binding is running). This allows users to track the progress and potentially failed attempts.
