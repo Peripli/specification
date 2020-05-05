@@ -764,7 +764,8 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
   }
 ```
 
-Alternatively, if the broker uses client certificate authentication, TLS credentials should be provided
+Alternatively, if the broker uses client certificate authentication, TLS credentials should be provided:
+
 ```json
 {
     "name": "service-broker-name",
@@ -781,6 +782,8 @@ Alternatively, if the broker uses client certificate authentication, TLS credent
     }
   }
 ```
+
+Atleast one of the `basic` or `tls` credentials options MUST be specified during broker registration.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
