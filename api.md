@@ -1762,7 +1762,7 @@ This specification does not limit how the Credentials Object should look like as
 | ----- | ---- | ----------- |
 | basic | [basic credentials](#basic-credentials-object) | Credentials for basic authentication |
 | token | string | Bearer token |
-| tls | [client certificate credentials](#client-certificate-credentials-object) | Credentials for basic authentication |
+| tls | [client certificate credentials](#client-certificate-credentials-object) | Credentials for client certificate authentication |
 
 _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
