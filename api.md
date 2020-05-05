@@ -252,7 +252,7 @@ The Service Manager MUST support the following operators:
 | ne | Evaluates to true if the field value does not matches the literal. False otherwise. | Evaluates to true if the label exists and no label value matches the literal. False otherwise. |
 | in | Evaluates to true if the field value matches at least one value in the list of literals. False otherwise. | Evaluates to true if the label exists and at least a label value matches one value in the list of literals. False otherwise. |
 | notin | Evaluates to true if the field value does not match any value in the list of literals. False otherwise. | Evaluates to true if the label exists and no label value matches any value in the list of literals. False otherwise. |
-| and | Evaluates to true if both the left and right operands evaluate to true. False otherwise. ||
+| and | Evaluates to true if both the left and right operands evaluate to true. False otherwise. | Evaluates to true if both the left and right operands evaluate to true. False otherwise. |
 
 Additionally, the Service Manager MAY support one or multiple of the following operators for field queries:
 
@@ -627,12 +627,6 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
     "description": "Cloud Foundry on AWS in Frankfurt.",
     "created_at": "2016-06-08T16:41:22.23Z",
     "updated_at": "2016-06-08T16:41:26.471Z",
-    "credentials" : {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-    },
     "labels": {
       "label1": ["value1"]
     },
@@ -646,7 +640,6 @@ Fetching of a `platform` resource entity MUST comply with [fetching a resource e
 | name | string | Platform name. |
 | type | string | Type of the Platform. |
 | description | string | Platform description. |
-| credentials | [credentials](#credentials-object) | A JSON object that contains credentials which the Service Broker Proxy (or the Platform) MUST be used to authenticate against the Service Manager. Service Manager SHOULD be able to identify the calling Platform from these credentials. |
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty object. |
@@ -674,12 +667,6 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "description": "Cloud Foundry on AWS in Frankfurt.",
       "created_at": "2016-06-08T16:41:22.25Z",
       "updated_at": "2016-06-08T16:41:26.6Z",
-      "credentials" : {
-        "basic": {
-            "username": "admin",
-            "password": "secret"
-        }
-      },
       "labels": {
         "label1": ["value1"]
       },
@@ -692,12 +679,6 @@ Listing `platforms` MUST comply with [listing all resource entities of a resourc
       "description": "Kubernetes on GCP in us-west1.",
       "created_at": "2016-06-08T17:41:22.0Z",
       "updated_at": "2016-06-08T17:41:26.294Z",
-      "credentials" : {
-        "basic": {
-            "username": "admin2",
-            "password": "secret2"
-        }
-      },
       "labels": {
       },
       "ready": true
@@ -1803,7 +1784,7 @@ Operation objects are created as a result of a REST call to the SM API.
 | state* | string | Valid values are `in progress`, `succeeded`, and `failed`. While `"state": "in progress"`, the Platform SHOULD continue polling. A response with `"state": "succeeded"` or `"state": "failed"` MUST cause the Platform to cease polling. |
 | resource_id | string | The ID of the resource. It MUST be present for update and delete requests. It MUST also be present when `"state": "succeeded"`. It SHOULD be present for create operation as soon as the ID of new entity is known. |
 | resource_type* | string | The type of the resource (e.g. /v1/service_brokers, /v1/service_instances) |
-| platform_id* | string | The ID of the platform from which the operation originated |
+| platform_id* | string | The ID of the platform from which the resource that is related to the operation originated. |
 | deletion_scheduled | string | The time when deletion of this resource was scheduled [in ISO 8601 format](#data-formats). |
 | reschedule | bool | Whether the operation has reached a checkpoint and is retryable. |
 | reschedule_timestamp | string | The time when reschedule of this resource was scheduled [in ISO 8601 format](#data-formats). |
@@ -1811,7 +1792,7 @@ Operation objects are created as a result of a REST call to the SM API.
 | labels | collection of [labels](#labels-object) | Additional data associated with the resource entity. MAY be an empty array. |
 | created_at* | string | The time of operation start [in ISO 8601 format](#data-formats). |
 | updated_at* | string | The time of operation end [in ISO 8601 format](#data-formats). This field SHOULD be present if `"state": "succeeded"` or `"state": "failed"`. |
-| errors | array of error object | Errors describing why the operation has failed. |
+| errors | array of error object | [Errors](#errors) describing why the operation has failed. |
 | transitive_resources | array of objects | Describes details about transitive resources that are related to the main resource (specified by `resource_id`) and that were also affected by the operation. |
 | ready* | boolean | Whether the resource is ready or not. |
 
