@@ -764,6 +764,24 @@ Creation of a `service broker` resource entity MUST comply with [creating a reso
   }
 ```
 
+Alternatively, if the broker uses client certificate authentication, TLS credentials should be provided
+```json
+{
+    "name": "service-broker-name",
+    "description": "Service broker providing some valuable services.",
+    "broker_url": "http://service-broker.example.com",
+    "credentials": {
+        "tls": {
+            "client_certificate": "-----BEGIN CERTIFICATE-----CCAD8jCdAtqgAwIBAgINfc...-----END CERTIFICATE-----",
+            "client_key": "-----BEGIN RSA PRIVATE KEY-----MIIEowIBAAKCAQ...-----END RSA PRIVATE KEY-----"
+        }
+    },
+    "labels": {
+      "label1": ["value1"]
+    }
+  }
+```
+
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | name* | string | A CLI-friendly name of the service broker. The Service Manager MAY change this name to make it unique across all registered brokers. MUST be a non-empty string. |
@@ -1744,6 +1762,7 @@ This specification does not limit how the Credentials Object should look like as
 | ----- | ---- | ----------- |
 | basic | [basic credentials](#basic-credentials-object) | Credentials for basic authentication |
 | token | string | Bearer token |
+| tls | [client certificate credentials](#client-certificate-credentials-object) | Credentials for basic authentication |
 
 _Exactly one_ of the properties `basic` or `token` MUST be provided.
 
@@ -1755,6 +1774,16 @@ _Exactly one_ of the properties `basic` or `token` MUST be provided.
 | password* | string | password |
 
 \* Fields with an asterisk are REQUIRED.
+
+### Client Certificate Credentials Object
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| client_certificate* | string | the PEM encoded certificate |
+| client_key* | string | the PEM encoded private key |
+
+\* Fields with an asterisk are REQUIRED.
+
 
 
 ## Operation Object
