@@ -76,7 +76,7 @@ One of the access channels to the Service Manager is via the [smctl CLI](https:/
 
 This document inherits the terminology from the Service Manager specification and [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/) specification.
 
-Additionally, the follow terms and concepts are used:
+Additionally, the following terms and concepts are used:
 
 * *ID*: An ID is globally unique identifier. An ID MUST NOT be longer than 50 characters and SHOULD only contain characters from the "Unreserved Characters" as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-2.3). In other words: uppercase and lowercase letters, decimal digits, hyphen, period, underscore and tilde. Using a GUID is RECOMMENDED.
 * *CLI-friendly name*: A CLI-friendly name is a short string that SHOULD only use lowercase alphanumeric characters, periods and hyphens. Whitespaces are not allowed. A name MUST NOT exceed 255 character, but it is RECOMMENDED to keep it much shorter -- imagine a user having to type it as an argument for a longer command.
