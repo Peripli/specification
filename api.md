@@ -30,12 +30,14 @@
 - [Service Instance Management](#service-instance-management)
   - [Provisioning a Service Instance](#provisioning-a-service-instance)
   - [Fetching a Service Instance](#fetching-a-service-instance)
+  - [Fetching a Service Instance Parameters](#fetching-a-service-instance-parameters)
   - [Listing Service Instances](#listing-service-instances)
   - [Patching a Service Instance](#patching-a-service-instance)
   - [Deleting a Service Instance](#deleting-a-service-instance)
 - [Service Binding Management](#service-binding-management)
   - [Creating a Service Binding](#creating-a-service-binding)
   - [Fetching a Service Binding](#fetching-a-service-binding)
+  - [Fetching a Service Binding Parameters](#fetching-a-service-binding-parameters)
   - [Listing Service Bindings](#listing-service-bindings)
   - [Patching a Service Binding](#patching-a-service-binding)
   - [Deleting a Service Binding](#deleting-a-service-binding)
@@ -979,6 +981,37 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | usable | boolean | If the instance is `usable` or not (as per the OSB spec `instance_usable`) |
 | ready | boolean | Whether the resource is ready or not. |
 
+### Fetching a Service Instance Parameters
+
+Service Manager fetches the data from the upstream broker.
+
+#### Route
+
+`GET /v1/service_instances/:service_instance_id/parameters`
+
+`:service_instance_id` MUST be the ID of a previously provisioned service instance.
+The instances_retrievable feature must be enabled for the service offering in broker catalog. 
+
+#### Response Body
+
+##### Service Instance Parameters Object
+
+```json
+{
+   "param1":"value1",
+   "param2":"value2"
+}
+```
+
+#### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution was successful. |
+| 404 Not Found | MUST be returned if the requested resource is missing, the creation operation is still in progress, or if the user is not authorized to access this resource. |
+| 400 Bad Request | MUST be returned if the broker doesn't support fetching of instances for this service offering or if request was sent with the value true for query param: async.  (if the operation is asynchronous) |
+| 502 Bad Gateway | MUST be returned if there was a failure to parse the parameters of the service instance returned from a broker. |
+
 ### Listing Service Instances
 
 Listing `service instances` MUST comply with [listing all resource entities of a resource type](#listing-all-resource-entities-of-a-resource-type).
@@ -1131,6 +1164,36 @@ The Service Manager MAY choose to provide cached data and not to [fetch the data
 | created_at | string | The time of the creation [in ISO 8601 format](#data-formats). |
 | updated_at | string | The time of the last update [in ISO 8601 format](#data-formats). |
 | ready | boolean | Whether the resource is ready or not. |
+
+### Fetching a Service Binding Parameters
+
+Service Manager fetches the data from the upstream broker.
+
+#### Route
+
+`GET /v1/service_bindings/:service_binding_id/parameters`
+
+`:service_binding_id` MUST be the ID of a previously created service binding.
+The bindings_retrievable feature must be enabled for the service offering in broker catalog. 
+
+#### Response Body
+
+##### Service Binding Object
+
+```json
+{
+   "param1":"value1",
+   "param2":"value2"
+}
+```
+#### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 200 OK | MUST be returned if the request execution was successful. |
+| 404 Not Found | MUST be returned if the requested resource is missing, if the creation operation is still in progress, or if the user is not authorized to access this resource. |
+| 400 Bad Request | MUST be returned if the broker doesn't support fetching of bindings for this service offering or if request was sent with the value true for the query param: async. (if the operation is asynchronous). |
+| 502 Bad Gateway | MUST be returned if there was a failure to parse the parameters of the service binding returned from a broker. |
 
 ### Listing Service Bindings
 
