@@ -715,6 +715,26 @@ All [Service Visibilities](#service-visibility-management) entries that belong t
 
 `:platform_id` MUST be the ID of an existing Platform.
 
+### Cascade Delete Platform
+
+All resources that belong to this `platform` resource entity are removed.
+
+#### Route
+
+`DELETE /v1/platforms/:platform_id/?cascade=true`
+
+`:platform_id` MUST be the ID of an existing Platform.
+The `supportsCascadeDelete` feature must be enabled in platform controller.
+
+#### Response
+
+| Status Code | Description |
+| ----------- | ----------- |
+| 202 Accepted    | MUST be returned if cascade deletion is successfully initiated as a result of this request. |
+| 404 Not Found   | MUST be returned if the requested resource is missing or if the user is not authorized to access this resource. |
+| 400 Bad Request | MUST be returned if the request is malformed or missing mandatory data. |
+
+
 ## Service Broker Management
 
 ### Registering a Service Broker
