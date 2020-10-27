@@ -707,7 +707,7 @@ Additional parameters:
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| regenerateCredentials | boolean | Indicates whether to regenerate credentials. Note that once you have regenerated credentials, the previous credentials are no longer usable |
+| regenerateCredentials | boolean | Indicates whether to regenerate credentials
 
 
 ### Deleting a Platform
