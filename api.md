@@ -703,6 +703,13 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 See [Registering a Platform](#registering-a-platform) and [Patching Labels](#patching-labels).
 
+Additional parameters:
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| regenerateCredentials | boolean | Indicates whether to regenerate credentials. Note that once you have regenerated credentials, the previous credentials are no longer usable |
+
+
 ### Deleting a Platform
 
 Deletion of a `platform` resource entity MUST comply with [deleting a resource entity](#deleting-a-resource-entity).
