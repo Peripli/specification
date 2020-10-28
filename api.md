@@ -699,15 +699,16 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 `:platform_id` The ID of an existing Platform.
 
-##### Request Body
-
-See [Registering a Platform](#registering-a-platform) and [Patching Labels](#patching-labels).
-
 Additional parameters:
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
 | regenerateCredentials | boolean | Indicates whether to regenerate credentials
+
+##### Request Body
+
+See [Registering a Platform](#registering-a-platform) and [Patching Labels](#patching-labels).
+
 
 
 ### Deleting a Platform
