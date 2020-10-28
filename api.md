@@ -699,11 +699,11 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 `:platform_id` The ID of an existing Platform.
 
-Additional parameters:
+#### Parameters
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
-| regenerateCredentials | boolean | Indicates whether to regenerate credentials
+| regenerateCredentials | boolean | Indicates whether to regenerate credentials. The default is false.
 
 ##### Request Body
 
