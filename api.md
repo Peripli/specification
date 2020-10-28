@@ -699,7 +699,7 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 `:platform_id` The ID of an existing Platform.
 
-#### Parameters
+##### Parameters
 
 | Query-String Field | Type | Description |
 | ------------------ | ---- | ----------- |
