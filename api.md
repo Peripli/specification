@@ -2012,8 +2012,7 @@ All operations in one request MUST be performed as one atomic change. Either all
 ...
 "labels": [
     { "op": "add", "key": "label1", "values": ["test1", "test2"] },
-    { "op": "set", "key": "label2", "values": ["test2"] },
-    { "op": "remove", "key": "label3" },
+    { "op": "remove", "key": "label3" }
   ]
 ...  
 ```
