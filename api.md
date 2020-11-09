@@ -699,9 +699,17 @@ Patching of a `platform` resource entity MUST comply with [patching a resource e
 
 `:platform_id` The ID of an existing Platform.
 
+##### Parameters
+
+| Query-String Field | Type | Description |
+| ------------------ | ---- | ----------- |
+| regenerateCredentials | boolean | Indicates whether to regenerate credentials. The default is false.
+
 ##### Request Body
 
 See [Registering a Platform](#registering-a-platform) and [Patching Labels](#patching-labels).
+
+
 
 ### Deleting a Platform
 
@@ -2024,8 +2032,7 @@ All operations in one request MUST be performed as one atomic change. Either all
 ...
 "labels": [
     { "op": "add", "key": "label1", "values": ["test1", "test2"] },
-    { "op": "set", "key": "label2", "values": ["test2"] },
-    { "op": "remove", "key": "label3" },
+    { "op": "remove", "key": "label3" }
   ]
 ...  
 ```
