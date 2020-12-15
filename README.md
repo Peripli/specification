@@ -38,12 +38,13 @@ Additionally, this specification defines the following terms:
 
 - *Service Manager*: A component that acts as a platform as per OSB API and exposes a platform API.
   It allows the management and registration of service brokers and platform instances.
-  Also acts as a central service broker.
+  Also acts as a central service broker via the Service Broker Proxy.
 
-- *Service Broker Proxy*:	A component that is associated with a platform that is registered at the Service Manager
-  and is a service broker as per the OSB API specification.
-  The proxy replicates the changes in the Service Manager into the platform instance in which the proxy resides.
-  Service Brokers Proxies are in charge of registering and deregistering themselves at the platform it is responsible for.
+- *Service Broker Proxy*:
+    The entity that is registered with the platform instance as an OSB API
+    compliant service broker. The proxy works with the service manager to
+	manage the OSB API communications between the platform and the actual
+	service brokers.
 
 ## Motivation 
 
@@ -68,13 +69,25 @@ The main part is the core component.
 It is the central registry for service broker and platform registration, as well as for tracking of all service instances.
 This core component communicates with the registered brokers and acts as a platform per Open Service Broker specification for them.
 
-In each Platform Instance resides a component called the Service Broker Proxy.
-It is the substitute for all brokers registered at the Service Manager
-in order to replicate broker registration and access visibility changes in the corresponding Platform Instance. It also  delegates lifecycle operations to create/delete/bind/unbind service instances from the corresponding Platform Instance to the Service Manager and the services registered there.
+For each Platform Instance there is an OSB API compliant Service Broker
+registered called the Service Broker Proxy, which is the second part of the
+Service Manager.
+The proxy is the substitute for all brokers registered at the Service Manager.
+It works with the Service Manager to manage the Platform Instance's view of
+the services and instances available to the Platform Instance.
+It also  delegates lifecycle operations to create/delete/bind/unbind service
+instances from the corresponding Platform Instance to the Service Manager and
+the services registered there.
 
-When a broker is registered or deregistered at the Service Manager,
-the Service Broker Proxy registers or deregisters itself in the name of this service broker.
-From a Platform Instance point of view, the broker proxy is indistinguishable from the real broker because both implement the OSB API.
+As brokers are (de)registered at the Service Manager, the Platform Instance's
+view of the list of services will change. In some cases new Service Broker
+Proxies will be added to Platform Instances (so there is a 1:1 relationship
+between "real brokers" and "proxy brokers"). In other cases there will be
+a single Service Broker Proxy registered to Platform Instances and it will
+expose all services from all "real brokers". This specification allows for
+both types of models. In either case, from a Platform Instance point of view,
+the broker proxy is indistinguishable from the real broker because both
+implement the OSB API.
 
 When the Platform Instance makes a call to the service broker, for example to provision a service instance,
 the broker proxy accepts the call, forwards it to the Service Manager, which in turn forwards it to the real broker.
